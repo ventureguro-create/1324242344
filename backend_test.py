@@ -35,7 +35,9 @@ class TelegramIntelAPITester:
             if method == 'GET':
                 response = requests.get(url, headers=headers, timeout=30)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=headers, timeout=30)
+                # Ensure we send at least empty JSON object for POST requests
+                json_data = data if data is not None else {}
+                response = requests.post(url, json=json_data, headers=headers, timeout=30)
             elif method == 'PATCH':
                 response = requests.patch(url, json=data, headers=headers, timeout=30)
             elif method == 'DELETE':
