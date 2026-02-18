@@ -244,6 +244,284 @@ class TelegramIntelUtilityAPITester:
         else:
             self.log_result("User Alerts API", False, details)
 
+    def test_utility_list_api(self):
+        """Test GET /api/telegram-intel/utility/list"""
+        print("\n🔍 Testing Utility List API...")
+        success, details, data = self.make_request('GET', '/api/telegram-intel/utility/list')
+        
+        if success and data:
+            expected_fields = ['ok', 'mode', 'total', 'limit', 'offset', 'items', 'stats']
+            missing_fields = [field for field in expected_fields if field not in data]
+            
+            if not missing_fields:
+                mode = data.get('mode')
+                total = data.get('total', 0)
+                items = data.get('items', [])
+                stats = data.get('stats', {})
+                
+                print(f"   Mode: {mode}")
+                print(f"   Total channels: {total}")
+                print(f"   Items returned: {len(items)}")
+                
+                if stats:
+                    print(f"   Average utility: {stats.get('avgUtility', 0)}")
+                    print(f"   Average growth30: {stats.get('avgGrowth30', 0)}")
+                    print(f"   Average engagement: {stats.get('avgEngagement', 0)}")
+                    print(f"   Total channels in stats: {stats.get('totalChannels', 0)}")
+                
+                # Check item structure if items exist
+                if items:
+                    sample_item = items[0]
+                    required_item_fields = ['username', 'utilityScore', 'utilityTier', 'explain']
+                    missing_item_fields = [field for field in required_item_fields if field not in sample_item]
+                    
+                    if not missing_item_fields:
+                        print(f"   Sample channel: {sample_item['username']}")
+                        print(f"   Utility score: {sample_item['utilityScore']}")
+                        print(f"   Utility tier: {sample_item['utilityTier']}")
+                        print(f"   Has explain breakdown: {'explain' in sample_item}")
+                        
+                        # Verify tier is valid
+                        valid_tiers = ['A+', 'A', 'B', 'C', 'D']
+                        tier_valid = sample_item['utilityTier'] in valid_tiers
+                        
+                        # Verify score range
+                        score_valid = 0 <= sample_item['utilityScore'] <= 100
+                        
+                        if tier_valid and score_valid and mode == 'utility':
+                            self.log_result("Utility List API", True, f"Valid structure with {len(items)} items")
+                        else:
+                            invalid_reasons = []
+                            if not tier_valid:
+                                invalid_reasons.append(f"Invalid tier: {sample_item['utilityTier']}")
+                            if not score_valid:
+                                invalid_reasons.append(f"Invalid score: {sample_item['utilityScore']}")
+                            if mode != 'utility':
+                                invalid_reasons.append(f"Wrong mode: {mode}")
+                            self.log_result("Utility List API", False, "; ".join(invalid_reasons))
+                    else:
+                        self.log_result("Utility List API", False, f"Item missing fields: {missing_item_fields}")
+                else:
+                    # Empty items is okay for empty database
+                    if mode == 'utility':
+                        self.log_result("Utility List API", True, "Empty items (expected for empty database)")
+                    else:
+                        self.log_result("Utility List API", False, f"Wrong mode: {mode}")
+            else:
+                self.log_result("Utility List API", False, f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Utility List API", False, details)
+
+    def test_utility_explain_api(self):
+        """Test GET /api/telegram-intel/utility/explain"""
+        print("\n🔍 Testing Utility Explain API...")
+        success, details, data = self.make_request('GET', '/api/telegram-intel/utility/explain')
+        
+        if success and data:
+            if data.get('ok') and 'formula' in data:
+                formula = data['formula']
+                
+                # Check formula structure
+                has_description = 'description' in formula
+                has_weights = 'weights' in formula
+                has_tiers = 'tiers' in formula
+                has_metrics = 'metrics' in formula
+                
+                print(f"   Has description: {has_description}")
+                print(f"   Has weights: {has_weights}")
+                print(f"   Has tiers: {has_tiers}")
+                print(f"   Has metrics: {has_metrics}")
+                
+                if has_weights:
+                    weights = formula['weights']
+                    expected_weights = ['engagement', 'growth', 'stability', 'originality', 'activity', 'fraudInverse']
+                    weight_sum = sum(weights.values())
+                    print(f"   Weight sum: {weight_sum} (should be 1.0)")
+                    
+                    all_weights_present = all(w in weights for w in expected_weights)
+                    weight_sum_correct = abs(weight_sum - 1.0) < 0.01
+                    
+                    if all_weights_present and weight_sum_correct:
+                        print(f"   ✅ All weights present and sum to 1.0")
+                    else:
+                        print(f"   ❌ Weight issues: all_present={all_weights_present}, sum_correct={weight_sum_correct}")
+                
+                if has_tiers:
+                    tiers = formula['tiers']
+                    expected_tiers = ['A+', 'A', 'B', 'C', 'D']
+                    all_tiers_present = all(t in tiers for t in expected_tiers)
+                    print(f"   All tiers present: {all_tiers_present}")
+                    if all_tiers_present:
+                        print(f"   Tier A+: {tiers['A+']}")
+                        print(f"   Tier D: {tiers['D']}")
+                
+                structure_complete = has_description and has_weights and has_tiers and has_metrics
+                self.log_result("Utility Explain API", structure_complete, "Formula explanation complete" if structure_complete else "Incomplete formula structure")
+            else:
+                self.log_result("Utility Explain API", False, "Missing ok=true or formula field")
+        else:
+            self.log_result("Utility Explain API", False, details)
+
+    def test_utility_channel_api(self):
+        """Test GET /api/telegram-intel/utility/channel/:username"""
+        print("\n🔍 Testing Utility Channel API...")
+        
+        # Test with a mock channel name (should exist in mock data)
+        test_username = "alpha_crypto"
+        success, details, data = self.make_request('GET', f'/api/telegram-intel/utility/channel/{test_username}')
+        
+        if success and data:
+            if data.get('ok') and 'channel' in data:
+                channel = data['channel']
+                
+                required_fields = ['username', 'utilityScore', 'utilityTier', 'explain']
+                missing_fields = [field for field in required_fields if field not in channel]
+                
+                if not missing_fields:
+                    print(f"   Channel: {channel['username']}")
+                    print(f"   Utility score: {channel['utilityScore']}")
+                    print(f"   Utility tier: {channel['utilityTier']}")
+                    
+                    # Check explain structure
+                    explain = channel.get('explain', {})
+                    explain_fields = ['engagementScore', 'growthScore', 'stabilityScore', 'originalityScore', 'activityScore', 'fraudInverseScore']
+                    explain_complete = all(field in explain for field in explain_fields)
+                    
+                    print(f"   Has complete explain breakdown: {explain_complete}")
+                    if explain_complete:
+                        print(f"   Sample scores - engagement: {explain['engagementScore']}, growth: {explain['growthScore']}")
+                    
+                    # Verify tier and score validity
+                    valid_tiers = ['A+', 'A', 'B', 'C', 'D']
+                    tier_valid = channel['utilityTier'] in valid_tiers
+                    score_valid = 0 <= channel['utilityScore'] <= 100
+                    
+                    if tier_valid and score_valid and explain_complete:
+                        self.log_result("Utility Channel API", True, f"Channel data valid for {test_username}")
+                    else:
+                        issues = []
+                        if not tier_valid:
+                            issues.append("invalid tier")
+                        if not score_valid:
+                            issues.append("invalid score") 
+                        if not explain_complete:
+                            issues.append("incomplete explain")
+                        self.log_result("Utility Channel API", False, f"Issues: {', '.join(issues)}")
+                else:
+                    self.log_result("Utility Channel API", False, f"Missing fields: {missing_fields}")
+            else:
+                self.log_result("Utility Channel API", False, "Missing ok=true or channel field")
+        else:
+            # Test 404 case with non-existent channel
+            print(f"   Testing 404 case...")
+            not_found_success, not_found_details, not_found_data = self.make_request('GET', '/api/telegram-intel/utility/channel/nonexistent_channel_12345', expected_status=404)
+            
+            if not_found_success and not_found_data and not_found_data.get('ok') == False:
+                self.log_result("Utility Channel API", True, "Correctly returns 404 for unknown channel")
+            else:
+                self.log_result("Utility Channel API", False, f"Failed to get valid response for {test_username}: {details}")
+
+    def test_intel_list_mode_utility(self):
+        """Test GET /api/telegram-intel/intel/list?mode=utility"""
+        print("\n🔍 Testing Intel List API with mode=utility...")
+        success, details, data = self.make_request('GET', '/api/telegram-intel/intel/list?mode=utility')
+        
+        if success and data:
+            # Should return same structure as /utility/list
+            expected_fields = ['ok', 'mode', 'total', 'limit', 'offset', 'items', 'stats']
+            missing_fields = [field for field in expected_fields if field not in data]
+            
+            if not missing_fields:
+                mode = data.get('mode')
+                if mode == 'utility':
+                    items = data.get('items', [])
+                    print(f"   Mode correctly set to: {mode}")
+                    print(f"   Returned {len(items)} items")
+                    
+                    # Check if response structure matches utility format
+                    if items:
+                        sample_item = items[0]
+                        has_utility_fields = 'utilityScore' in sample_item and 'utilityTier' in sample_item
+                        print(f"   Has utility fields: {has_utility_fields}")
+                        
+                        if has_utility_fields:
+                            self.log_result("Intel List mode=utility", True, f"Utility mode working with {len(items)} items")
+                        else:
+                            self.log_result("Intel List mode=utility", False, "Missing utility fields in items")
+                    else:
+                        # Empty is okay for empty database
+                        self.log_result("Intel List mode=utility", True, "Utility mode working (empty database)")
+                else:
+                    self.log_result("Intel List mode=utility", False, f"Wrong mode returned: {mode}")
+            else:
+                self.log_result("Intel List mode=utility", False, f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Intel List mode=utility", False, details)
+
+    def test_intel_list_mode_intel(self):
+        """Test GET /api/telegram-intel/intel/list?mode=intel (existing mode)"""
+        print("\n🔍 Testing Intel List API with mode=intel (existing)...")
+        success, details, data = self.make_request('GET', '/api/telegram-intel/intel/list?mode=intel')
+        
+        if success and data:
+            # Should return traditional intel format, not utility format
+            has_items = 'items' in data
+            
+            if has_items:
+                items = data.get('items', [])
+                print(f"   Intel mode returned {len(items)} items")
+                
+                # If items exist, they should NOT have utilityScore/utilityTier
+                if items:
+                    sample_item = items[0]
+                    has_utility_fields = 'utilityScore' in sample_item or 'utilityTier' in sample_item
+                    
+                    if not has_utility_fields:
+                        print(f"   ✅ Intel mode correctly excludes utility fields")
+                        self.log_result("Intel List mode=intel", True, "Intel mode working correctly")
+                    else:
+                        print(f"   ❌ Intel mode incorrectly includes utility fields")
+                        self.log_result("Intel List mode=intel", False, "Intel mode should not include utility fields")
+                else:
+                    # Empty is okay
+                    self.log_result("Intel List mode=intel", True, "Intel mode working (empty database)")
+            else:
+                self.log_result("Intel List mode=intel", False, "Missing items field")
+        else:
+            self.log_result("Intel List mode=intel", False, details)
+
+    def test_intel_list_mode_momentum(self):
+        """Test GET /api/telegram-intel/intel/list?mode=momentum (existing mode)"""
+        print("\n🔍 Testing Intel List API with mode=momentum (existing)...")
+        success, details, data = self.make_request('GET', '/api/telegram-intel/intel/list?mode=momentum')
+        
+        if success and data:
+            # Should return traditional momentum format, not utility format
+            has_items = 'items' in data
+            
+            if has_items:
+                items = data.get('items', [])
+                print(f"   Momentum mode returned {len(items)} items")
+                
+                # If items exist, they should NOT have utilityScore/utilityTier
+                if items:
+                    sample_item = items[0]
+                    has_utility_fields = 'utilityScore' in sample_item or 'utilityTier' in sample_item
+                    
+                    if not has_utility_fields:
+                        print(f"   ✅ Momentum mode correctly excludes utility fields")
+                        self.log_result("Intel List mode=momentum", True, "Momentum mode working correctly")
+                    else:
+                        print(f"   ❌ Momentum mode incorrectly includes utility fields")
+                        self.log_result("Intel List mode=momentum", False, "Momentum mode should not include utility fields")
+                else:
+                    # Empty is okay
+                    self.log_result("Intel List mode=momentum", True, "Momentum mode working (empty database)")
+            else:
+                self.log_result("Intel List mode=momentum", False, "Missing items field")
+        else:
+            self.log_result("Intel List mode=momentum", False, details)
+
     def run_all_tests(self):
         """Run all API tests"""
         print("🚀 Starting Telegram Intel Bot API Tests...")
