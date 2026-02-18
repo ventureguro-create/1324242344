@@ -174,6 +174,8 @@ const TelegramMoversPage = lazy(() => import("./pages/TelegramMoversPage"));
 const TelegramAlertsPage = lazy(() => import("./pages/TelegramAlertsPage"));
 // Block 5.1: Watchlist Page
 const TelegramWatchlistPage = lazy(() => import("./pages/TelegramWatchlistPage"));
+// U-5: Sectors Heatmap Page
+const TelegramSectorsPage = lazy(() => import("./pages/TelegramSectorsPage"));
 
 // Connections - Influence Scoring
 const ConnectionsPage = lazy(() => import("./pages/ConnectionsPage"));
