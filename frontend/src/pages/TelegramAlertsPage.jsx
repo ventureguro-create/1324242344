@@ -1,12 +1,13 @@
 /**
- * Telegram Alerts Page (Block ALERTS + BLOCK 5.2)
- * System alerts and personalized user alerts
+ * Telegram Alerts Page (Block ALERTS + BLOCK 5.2 + PHASE 6)
+ * System alerts and personalized user alerts with Telegram Bot connection
  */
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { RefreshCw, ArrowLeft, AlertTriangle, TrendingUp, TrendingDown, Shield, Bell, Star, User } from 'lucide-react';
 import * as telegramApi from '../api/telegramIntel.api';
 import { UserAlertsPanel } from '../components/telegram/UserAlertsPanel';
+import { TelegramBotConnect } from '../components/telegram/TelegramBotConnect';
 
 const alertTypeConfig = {
   INTEL_SPIKE: { icon: TrendingUp, color: 'emerald', label: 'Intel Spike' },
