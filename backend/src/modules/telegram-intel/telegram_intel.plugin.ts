@@ -225,6 +225,10 @@ export const telegramIntelPlugin: FastifyPluginAsync = async (fastify) => {
   
   await fastify.register((await import('./utility/utility.routes.js')).utilityRoutes);
 
+  // ==================== Sector Routes (U-3, U-4, U-5) ====================
+  
+  await fastify.register((await import('./sector/sector.routes.js')).sectorRoutes);
+
   // ==================== Watchlist (BLOCK 5.1) ====================
   
   await fastify.register((await import('./watchlist/watchlist.routes.js')).watchlistRoutes);
