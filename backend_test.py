@@ -9,7 +9,7 @@ import sys
 import json
 from datetime import datetime
 
-class TelegramIntelAPITester:
+class TelegramIntelUtilityAPITester:
     def __init__(self, base_url="https://tg-isolated.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
