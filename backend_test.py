@@ -522,17 +522,65 @@ class TelegramIntelUtilityAPITester:
         else:
             self.log_result("Intel List mode=momentum", False, details)
 
+    def test_sector_overview_api(self):
+        """Test GET /api/telegram-intel/sector/overview"""
+        print("\n🔍 Testing Sector Overview API...")
+        success, details, data = self.make_request('GET', '/api/telegram-intel/sector/overview')
+        
+        if success and data:
+            expected_fields = ['ok', 'sectors', 'market', 'updatedAt']
+            missing_fields = [field for field in expected_fields if field not in data]
+            
+            if not missing_fields:
+                sectors = data.get('sectors', [])
+                market = data.get('market', {})
+                
+                print(f"   Sectors returned: {len(sectors)}")
+                print(f"   Market summary available: {bool(market)}")
+                
+                if sectors:
+                    sample_sector = sectors[0]
+                    required_sector_fields = ['category', 'channelsCount', 'avgUtility', 'avgGrowth30', 'avgAcceleration']
+                    missing_sector_fields = [field for field in required_sector_fields if field not in sample_sector]
+                    
+                    if not missing_sector_fields:
+                        print(f"   Sample sector: {sample_sector['category']}")
+                        print(f"   Channels count: {sample_sector['channelsCount']}")
+                        print(f"   Avg utility: {sample_sector['avgUtility']}")
+                        print(f"   Avg growth30: {sample_sector['avgGrowth30']}")
+                        
+                        # Check market summary
+                        if market:
+                            required_market_fields = ['totalChannels', 'avgUtility', 'avgGrowth', 'avgAcceleration']
+                            market_complete = all(field in market for field in required_market_fields)
+                            print(f"   Market summary complete: {market_complete}")
+                            if market_complete:
+                                print(f"   Total channels in market: {market['totalChannels']}")
+                                print(f"   Market avg utility: {market['avgUtility']}")
+                        
+                        self.log_result("Sector Overview API", True, f"Valid structure with {len(sectors)} sectors")
+                    else:
+                        self.log_result("Sector Overview API", False, f"Sector missing fields: {missing_sector_fields}")
+                else:
+                    # Empty sectors is okay for empty database
+                    self.log_result("Sector Overview API", True, "Empty sectors (expected for empty database)")
+            else:
+                self.log_result("Sector Overview API", False, f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Sector Overview API", False, details)
+
     def run_all_tests(self):
         """Run all API tests"""
-        print("🚀 Starting Telegram Intel BLOCK U-1 Utility Engine API Tests...")
+        print("🚀 Starting Telegram Intel BLOCK U-2 to U-5 Utility Architecture API Tests...")
         print(f"Testing against: {self.base_url}")
         print("=" * 60)
         
-        # Test BLOCK U-1 Utility APIs (Primary focus)
+        # Test BLOCK U-2 to U-5 Utility APIs (Primary focus)
         self.test_utility_list_api()
         self.test_utility_explain_api()
         self.test_utility_channel_api()
         self.test_intel_list_mode_utility()
+        self.test_sector_overview_api()
         
         # Test Existing Mode Compatibility
         self.test_intel_list_mode_intel()
