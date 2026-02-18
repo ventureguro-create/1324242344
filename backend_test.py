@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Telegram Intel Bot (PHASE 6)
-Tests all bot API endpoints and existing telegram-intel APIs
+Backend API Testing for Telegram Intel with BLOCK U-1 Utility Engine
+Tests utility endpoints and existing telegram-intel APIs
 """
 
 import requests
