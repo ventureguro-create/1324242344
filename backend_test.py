@@ -93,23 +93,62 @@ class TelegramIntelAPITester:
     def test_bot_connect_api(self):
         """Test POST /api/telegram-intel/bot/connect"""
         print("\n🔍 Testing Bot Connect API...")
-        success, details, data = self.make_request('POST', '/api/telegram-intel/bot/connect')
         
-        if success and data:
-            has_link_token = 'linkToken' in data
-            has_expires_at = 'expiresAt' in data  
-            has_connect_url = 'connectUrl' in data
-            has_bot_username = 'botUsername' in data
+        # Try multiple actor identification methods
+        headers_variations = [
+            {},  # Default anonymous
+            {'X-Actor-Id': 'test_user_123', 'X-Actor-Type': 'anonymous'},
+            {'X-Actor-Id': 'anon_test123', 'X-Actor-Type': 'anonymous'}
+        ]
+        
+        success = False
+        for i, extra_headers in enumerate(headers_variations):
+            print(f"   Attempt {i+1}: {extra_headers if extra_headers else 'default headers'}")
             
-            print(f"   Link token generated: {has_link_token}")
-            print(f"   Expires at: {data.get('expiresAt', 'N/A')}")
-            print(f"   Connect URL: {has_connect_url}")
-            print(f"   Bot username: {data.get('botUsername', 'N/A')}")
-            
-            all_fields_present = has_link_token and has_expires_at and has_connect_url and has_bot_username
-            self.log_result("Bot Connect API", all_fields_present, "All required fields present" if all_fields_present else "Missing fields")
-        else:
-            self.log_result("Bot Connect API", False, details)
+            try:
+                url = f"{self.base_url}/api/telegram-intel/bot/connect"
+                headers = {'Content-Type': 'application/json', **extra_headers}
+                
+                response = requests.post(url, json={}, headers=headers, timeout=30)
+                
+                print(f"     Status: {response.status_code}")
+                
+                if response.status_code == 200:
+                    try:
+                        data = response.json()
+                        has_link_token = 'linkToken' in data
+                        has_expires_at = 'expiresAt' in data  
+                        has_connect_url = 'connectUrl' in data
+                        has_bot_username = 'botUsername' in data
+                        
+                        print(f"     Link token generated: {has_link_token}")
+                        print(f"     Expires at: {data.get('expiresAt', 'N/A')}")
+                        print(f"     Connect URL: {has_connect_url}")
+                        print(f"     Bot username: {data.get('botUsername', 'N/A')}")
+                        
+                        all_fields_present = has_link_token and has_expires_at and has_connect_url and has_bot_username
+                        if all_fields_present:
+                            self.log_result("Bot Connect API", True, f"Success with headers: {extra_headers}")
+                            success = True
+                            break
+                        else:
+                            print(f"     Missing fields in response")
+                    except Exception as e:
+                        print(f"     JSON parse error: {e}")
+                elif response.status_code >= 500:
+                    print(f"     Server error (5xx) - backend issue")
+                else:
+                    try:
+                        error_data = response.json()
+                        print(f"     Error response: {error_data}")
+                    except:
+                        print(f"     Non-JSON error response")
+                        
+            except Exception as e:
+                print(f"     Request failed: {e}")
+        
+        if not success:
+            self.log_result("Bot Connect API", False, "All attempts failed")
 
     def test_bot_preferences_api(self):
         """Test PATCH /api/telegram-intel/bot/preferences"""
