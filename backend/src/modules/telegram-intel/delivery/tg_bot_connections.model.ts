@@ -81,7 +81,6 @@ TgBotConnectionSchema.pre('save', function(next) {
   next();
 });
 
-export const TgBotConnectionModel = mongoose.models.TgBotConnection ||
-  mongoose.model('TgBotConnection', TgBotConnectionSchema, 'tg_bot_connections');
+export const TgBotConnectionModel = mongoose.model('TgBotConnection', TgBotConnectionSchema, 'tg_bot_connections');
 
 export type TgBotConnectionDoc = mongoose.InferSchemaType<typeof TgBotConnectionSchema>;
