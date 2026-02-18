@@ -1,0 +1,47 @@
+{
+  "summary": "Completed comprehensive testing of BLOCK U-1 Utility Engine. All utility endpoints working correctly with mock data enabled. Scoring formula, tier mapping, sorting, pagination, and error handling all functioning as designed.",
+  
+  "backend_issues": {
+    "critical_bugs": [],
+    "minor_issues": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "GET /api/telegram-intel/utility/list - returns utility leaderboard with correct structure",
+    "GET /api/telegram-intel/utility/explain - returns complete formula explanation with weights summing to 1.0",
+    "GET /api/telegram-intel/utility/channel/:username - returns individual channel utility data",
+    "GET /api/telegram-intel/intel/list?mode=utility - utility mode integration working",
+    "GET /api/telegram-intel/intel/list?mode=intel - existing intel mode still works",
+    "GET /api/telegram-intel/intel/list?mode=momentum - existing momentum mode still works",
+    "Utility scoring formula accuracy verified with manual calculation",
+    "Utility tier mapping (A+/A/B/C/D) working correctly for all channels",
+    "Sorting functionality works for all fields: utility, growth30, engagement, stability, fraud, activity",
+    "Pagination and offset parameters working correctly",
+    "404 handling for non-existent channels returns proper error response",
+    "Stats calculation (avgUtility, avgGrowth30, avgEngagement, totalChannels) accurate",
+    "Mock data adapter (TG_UTILITY_MOCK=1) providing test data correctly",
+    "Response structure matches specifications: utilityScore (0-100), utilityTier, explain object",
+    "All weight components present in explain breakdown: engagement, growth, stability, originality, activity, fraudInverse"
+  ],
+  
+  "test_report_links": ["/app/backend_test.py", "/app/utility_detailed_test.py"],
+  
+  "success_percentage": "Backend: 100% (15/15 utility endpoints and features), Frontend: N/A (backend-only testing)",
+  
+  "updated_files": [
+    "/app/backend/.env",
+    "/app/backend_test.py", 
+    "/app/utility_detailed_test.py"
+  ],
+  
+  "action_item_for_main_agent": "All BLOCK U-1 Utility Engine functionality is working correctly. Mock data is enabled for testing. For production use, remove TG_UTILITY_MOCK=1 from .env when real MongoDB data is available.",
+  
+  "should_call_test_agent_after_fix": "false",
+  "should_main_agent_test_itself": "false"
+}
