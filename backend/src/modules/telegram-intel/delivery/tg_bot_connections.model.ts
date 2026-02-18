@@ -14,8 +14,8 @@ const TgBotConnectionSchema = new mongoose.Schema({
     index: true 
   },
 
-  // Telegram user data
-  telegramUserId: { type: Number, unique: true, sparse: true, index: true },
+  // Telegram user data  
+  telegramUserId: { type: Number, sparse: true, index: true },
   telegramUsername: { type: String, sparse: true },
   telegramFirstName: { type: String },
   telegramLastName: { type: String },
