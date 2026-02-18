@@ -524,17 +524,21 @@ class TelegramIntelUtilityAPITester:
 
     def run_all_tests(self):
         """Run all API tests"""
-        print("🚀 Starting Telegram Intel Bot API Tests...")
+        print("🚀 Starting Telegram Intel BLOCK U-1 Utility Engine API Tests...")
         print(f"Testing against: {self.base_url}")
         print("=" * 60)
         
-        # Test Bot APIs (PHASE 6)
-        self.test_bot_status_api()
-        self.test_bot_connect_api()  
-        self.test_bot_preferences_api()
-        self.test_admin_bot_stats_api()
+        # Test BLOCK U-1 Utility APIs (Primary focus)
+        self.test_utility_list_api()
+        self.test_utility_explain_api()
+        self.test_utility_channel_api()
+        self.test_intel_list_mode_utility()
         
-        # Test Existing APIs
+        # Test Existing Mode Compatibility
+        self.test_intel_list_mode_intel()
+        self.test_intel_list_mode_momentum()
+        
+        # Test Some Legacy APIs (Basic check)
         self.test_intel_list_api()
         self.test_watchlist_api()
         self.test_user_alerts_api()
