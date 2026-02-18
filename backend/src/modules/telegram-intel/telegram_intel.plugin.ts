@@ -217,9 +217,13 @@ export const telegramIntelPlugin: FastifyPluginAsync = async (fastify) => {
   
   await fastify.register((await import('./routes/momentum.routes.js')).momentumRoutes);
 
-  // ==================== Leaderboard (PATCH-1, PATCH-3) ====================
+  // ==================== Leaderboard (PATCH-1, PATCH-3, U-1) ====================
   
   await fastify.register((await import('./routes/leaderboard.routes.js')).leaderboardRoutes);
+
+  // ==================== Utility Routes (BLOCK U-1) ====================
+  
+  await fastify.register((await import('./utility/utility.routes.js')).utilityRoutes);
 
   // ==================== Watchlist (BLOCK 5.1) ====================
   
