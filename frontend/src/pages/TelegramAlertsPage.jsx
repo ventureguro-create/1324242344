@@ -176,15 +176,25 @@ export default function TelegramAlertsPage() {
 
       {/* Personal Alerts View */}
       {mode === 'personal' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <UserAlertsPanel
-            alerts={userAlerts?.items || []}
-            stats={userAlerts?.stats}
-            loading={loading}
-            onMarkRead={handleMarkRead}
-            onMarkAllRead={handleMarkAllRead}
-            onDelete={handleDeleteAlert}
-          />
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Telegram Bot Connection - Sidebar */}
+          <div className="lg:col-span-1 order-2 lg:order-1">
+            <TelegramBotConnect />
+          </div>
+          
+          {/* Alerts List - Main Content */}
+          <div className="lg:col-span-2 order-1 lg:order-2">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <UserAlertsPanel
+                alerts={userAlerts?.items || []}
+                stats={userAlerts?.stats}
+                loading={loading}
+                onMarkRead={handleMarkRead}
+                onMarkAllRead={handleMarkAllRead}
+                onDelete={handleDeleteAlert}
+              />
+            </div>
+          </div>
         </div>
       )}
 
