@@ -1,0 +1,57 @@
+{
+  "summary": "Completed comprehensive testing of Telegram Intel Bot PHASE 6 Delivery Layer. Most backend APIs working correctly, frontend displays properly, but one API has database schema issue.",
+  
+  "backend_issues": {
+    "critical_bugs": [
+      {
+        "endpoint": "/api/telegram-intel/bot/connect",
+        "issue": "E11000 duplicate key error - telegramUserId unique constraint conflict when creating pending connections",
+        "impact": "Blocks new user Telegram bot connections",
+        "fix_priority": "HIGH",
+        "details": "Schema requires telegramUserId to be unique but allows null values during pending state, causing constraint violations"
+      }
+    ],
+    "minor_issues": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "component": "TelegramBotConnect",
+        "issue": "Button correctly disabled when bot not configured",
+        "fix_priority": "INFO",
+        "notes": "This is expected behavior since TG_BOT_TOKEN not set"
+      }
+    ]
+  },
+  
+  "passed_tests": [
+    "GET /api/telegram-intel/bot/status - returns correct bot.configured=false and connection status",
+    "PATCH /api/telegram-intel/bot/preferences - handles not_connected state correctly", 
+    "GET /api/admin/telegram-intel/bot/stats - returns bot and connection statistics",
+    "GET /api/telegram-intel/intel/list - leaderboard API works",
+    "GET /api/telegram-intel/watchlist - watchlist API works", 
+    "GET /api/telegram-intel/user/alerts - user alerts API works",
+    "Frontend /telegram page loads with Leaderboard interface",
+    "Frontend /telegram/alerts page loads with TelegramBotConnect component",
+    "TelegramBotConnect component displays properly in Russian",
+    "Mode toggles (personal/system alerts) working",
+    "Button states correctly reflect bot configuration status"
+  ],
+  
+  "test_report_links": ["/app/backend_test.py"],
+  
+  "success_percentage": "Backend: 85.7% (6/7 APIs), Frontend: 100% (2/2 pages)",
+  
+  "updated_files": [
+    "/app/backend/src/modules/telegram-intel/delivery/tg_bot_connections.model.ts",
+    "/app/backend_test.py"
+  ],
+  
+  "action_item_for_main_agent": "Fix database schema issue in tg_bot_connections.model.ts - telegramUserId field should be sparse and not required for initial connection records. The unique constraint should only apply when telegramUserId is not null.",
+  
+  "should_call_test_agent_after_fix": "true", 
+  "should_main_agent_test_itself": "false"
+}
