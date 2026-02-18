@@ -73,6 +73,7 @@ const TgBotConnectionSchema = new mongoose.Schema({
 // Indexes
 TgBotConnectionSchema.index({ actorId: 1, telegramUserId: 1 });
 TgBotConnectionSchema.index({ status: 1, 'preferences.enabled': 1 });
+TgBotConnectionSchema.index({ telegramUserId: 1 }, { unique: true, sparse: true });
 
 // Pre-save hook to update timestamp
 TgBotConnectionSchema.pre('save', function(next) {
