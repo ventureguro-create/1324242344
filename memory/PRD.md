@@ -1,162 +1,143 @@
-# Telegram Intelligence Platform - PRD v8.0
+# Telegram Market Intelligence Platform - PRD v9.0
 
 ## Original Problem Statement
-Production-grade изолированный Telegram Intelligence модуль с:
-- Phases 1-4: Scoring Engine (Alpha, Credibility, NetworkAlpha, Fraud, Temporal) ✅
-- Block UI-1: Production Leaderboard ✅
-- Block UI-2: Channel Detail Page ✅
-- Block UI-6: Movers Page ✅
-- Block GOV-1: Governance Admin ✅
-- Block ALERTS: Alerts Engine ✅
-- **Momentum Engine (M-1, M-2, M-3)** ✅
-- **PATCH-1: Unified Leaderboard with mode=intel|momentum** ✅
-- **PATCH-2: Movers with metric=momentumScore** ✅
-- **PATCH-3: Materialized Leaderboards** ✅
-- **BLOCK 5.1: Watchlist Core** ✅
-- **BLOCK 5.2: Personalized Alerts Engine** ✅
-- **PHASE 6: Bot Delivery Layer** ✅ (NEW)
+Переход от Alpha Intelligence к **Telegram Market Intelligence Terminal** с объективными метриками:
+- ~~Alpha как главный смысл~~ → Utility-first approach
+- Discovery Engine
+- Growth & Health Analytics  
+- Channel Utility Index
+- Personal Workspace
 
 ---
 
-## What's Been Implemented (2026-02-18)
+## Architecture Change: BLOCK U-1 ✅ (NEW)
 
-### PHASE 6: Bot Delivery Layer ✅ (NEW)
+### Utility-First Re-Architecture
 
-**Backend:**
-- `TgBotConnectionModel` - stores user Telegram bot connections with preferences
-- `bot.service.ts` - Telegram Bot API integration for sending push notifications
-- `bot.routes.ts` - REST API endpoints for bot management
-
-**API Endpoints:**
+**Было:**
 ```
-GET /api/telegram-intel/bot/status
-POST /api/telegram-intel/bot/connect
-DELETE /api/telegram-intel/bot/disconnect
-PATCH /api/telegram-intel/bot/preferences
-POST /api/telegram-intel/bot/test
-POST /api/telegram-intel/bot/webhook
-POST /api/admin/telegram-intel/bot/deliver
-GET /api/admin/telegram-intel/bot/stats
-GET /api/admin/telegram-intel/bot/connections
-POST /api/admin/telegram-intel/bot/webhook/set
+Intel Score = Alpha + Credibility + NetworkAlpha - Fraud
 ```
 
-**Frontend:**
-- `TelegramBotConnect.jsx` - Full connection UI with:
-  - Connect flow with deep link generation
-  - Preferences management (severity, alert types, quiet hours)
-  - Test notification button
-  - Disconnect option
-- Integrated into `TelegramAlertsPage.jsx`
+**Стало:**
+```
+Utility Score = 
+  25% Engagement +
+  20% Growth +
+  15% Stability +
+  15% Originality +
+  15% Activity +
+  10% FraudInverse
+```
 
-**Bot Commands:**
-- `/start <token>` - Connect web account to Telegram
-- `/start` - Welcome message
-- `/settings` - View notification settings
-- `/help` - Help information
-- `/stop` - Pause notifications
+### Tier System
+| Tier | Score Range |
+|------|-------------|
+| A+   | 85-100      |
+| A    | 75-84       |
+| B    | 60-74       |
+| C    | 40-59       |
+| D    | 0-39        |
+
+### API Endpoints (NEW)
+```
+GET /api/telegram-intel/intel/list?mode=utility  # Unified endpoint
+GET /api/telegram-intel/utility/list              # Standalone
+GET /api/telegram-intel/utility/channel/:username
+GET /api/telegram-intel/utility/explain           # Formula explanation
+```
+
+### Response Shape
+```json
+{
+  "ok": true,
+  "mode": "utility",
+  "total": 100,
+  "items": [{
+    "username": "alpha_crypto",
+    "utilityScore": 82,
+    "utilityTier": "A",
+    "growth30": 18.2,
+    "engagementRate": 0.14,
+    "stability": 0.76,
+    "forwardRatio": 0.18,
+    "fraudRisk": 0.12,
+    "explain": { ... }
+  }],
+  "stats": {
+    "avgUtility": 65,
+    "avgGrowth30": 8.5,
+    "avgEngagement": 0.11
+  }
+}
+```
 
 ---
 
-## Previous Implementations
+## What's Been Implemented
 
-### BLOCK 5.1: Watchlist Core ✅
-- User watchlist with notes, tags, alert settings
-- Score change tracking since added
+### BLOCK U-1: Utility Engine ✅ (2026-02-18)
+- `utility.types.ts` - Type definitions
+- `utility.scoring.ts` - Scoring formula + tier mapping
+- `utility.data.ts` - MongoDB adapter + mock data
+- `utility.service.ts` - Business logic
+- `utility.routes.ts` - REST endpoints
+- Patched `leaderboard.routes.ts` for mode=utility
 
-### BLOCK 5.2: Personalized Alerts Engine ✅
-- User-specific alerts based on watchlist
-- Alert types: INTEL_SPIKE/DUMP, MOMENTUM_SPIKE/DUMP, FRAUD_SPIKE, TIER_CHANGE, NEW_RISER
+### Previous Implementations
+- PHASE 6: Bot Delivery Layer ✅
+- BLOCK 5.2: Personalized Alerts ✅
+- BLOCK 5.1: Watchlist Core ✅
+- Momentum Engine ✅
+- PATCH-1,2,3: Materialized Leaderboards ✅
 
-### Momentum Engine ✅
-- M-1: Momentum Metrics Layer
-- M-2: Momentum Scoring Engine
-- M-3: UI Integration
+---
+
+## Leaderboard Modes
+
+| Mode | Endpoint | Description |
+|------|----------|-------------|
+| `utility` | `?mode=utility` | Objective metrics (DEFAULT) |
+| `intel` | `?mode=intel` | Full intel score |
+| `momentum` | `?mode=momentum` | Growth velocity |
 
 ---
 
 ## Frontend Routes
 
-| Route | Component | Description |
-|-------|-----------|-------------|
-| `/telegram` | TelegramLeaderboardPage | Intel/Momentum toggle |
-| `/telegram?mode=momentum` | TelegramLeaderboardPage | Momentum view |
-| `/telegram/movers` | TelegramMoversPage | Score change analytics |
-| `/telegram/alerts` | TelegramAlertsPage | Personal + System alerts + Bot Connect |
-| `/telegram/watchlist` | TelegramWatchlistPage | User's watchlist |
-| `/telegram/:username` | TelegramChannelPage | Channel detail |
-
----
-
-## Architecture
-
-```
-Telegram Intelligence Module
-├── Backend (Node.js/Fastify)
-│   ├── Bot Delivery (PHASE 6) - NEW
-│   │   ├── delivery/tg_bot_connections.model.ts
-│   │   ├── delivery/bot.service.ts
-│   │   └── delivery/bot.routes.ts
-│   ├── Watchlist (BLOCK 5.1)
-│   ├── User Alerts (BLOCK 5.2)
-│   ├── Momentum Engine
-│   └── Scoring Engine
-│
-├── Frontend (React)
-│   ├── components/telegram/
-│   │   ├── TelegramBotConnect.jsx - NEW
-│   │   ├── WatchlistButton.jsx
-│   │   ├── UserAlertsPanel.jsx
-│   │   └── ...
-│   └── pages/
-│       ├── TelegramAlertsPage.jsx (updated)
-│       └── ...
-│
-└── Data Pipeline
-    1. Ingestion → 2. Metrics → 3. IntelScore
-    4. Momentum → 5. User Alerts → 6. Bot Delivery
-```
-
----
-
-## Configuration
-
-**Required Environment Variables:**
-- `TG_BOT_TOKEN` - Telegram Bot API token (from @BotFather)
-- `MONGODB_URI` - MongoDB connection string
-- `TG_SECRETS_KEY` - Fernet key for encrypted credentials (optional)
-
-**Bot Webhook Setup:**
-```bash
-POST /api/admin/telegram-intel/bot/webhook/set
-Body: { "url": "https://your-domain.com/api/telegram-intel/bot/webhook" }
-```
+| Route | Description |
+|-------|-------------|
+| `/telegram` | Leaderboard (Utility/Intel/Momentum toggle) |
+| `/telegram/movers` | Score change analytics |
+| `/telegram/alerts` | Personal alerts + Bot Connect |
+| `/telegram/watchlist` | User's watchlist |
+| `/telegram/:username` | Channel detail |
 
 ---
 
 ## Prioritized Backlog
 
-### P0 (Critical - Completed)
-1. [x] BLOCK 5.1: Watchlist Core
-2. [x] BLOCK 5.2: Personalized Alerts Engine
-3. [x] PHASE 6: Bot Delivery Layer
+### P0 (Complete)
+- [x] BLOCK U-1: Utility Engine
+- [x] PHASE 6: Bot Delivery
+- [x] BLOCK 5.1+5.2: Watchlist + Alerts
 
-### P1 (High - Next)
-1. [ ] Scheduled delivery job (cron for pending alerts)
-2. [ ] Webhook verification (Telegram signature check)
-3. [ ] Rate limiting for bot API
+### P1 (Next - Frontend)
+- [ ] **BLOCK U-2**: Frontend toggle Utility | Advanced
+- [ ] New Leaderboard columns: Utility | Growth | ER | Stability | Fraud
+- [ ] Channel Page re-structure with Utility focus
 
 ### P2 (Medium)
-1. [ ] Email notifications
-2. [ ] Config Version Editor UI
-3. [ ] Export to CSV/Excel
+- [ ] Category filtering (Trading/News/NFT/VC)
+- [ ] Growth Acceleration metric
+- [ ] Scheduled delivery job
 
 ### P3 (Future)
-1. [ ] Websocket real-time alerts
-2. [ ] PATCH-3B: Split items for 100k+ scale
+- [ ] Export to CSV
+- [ ] Real-time websocket alerts
 
 ---
 
 **Last Updated:** 2026-02-18
-**Version:** 8.0.0
-**Status:** PHASE 6 Complete ✅
+**Version:** 9.0.0
+**Status:** BLOCK U-1 Complete ✅
