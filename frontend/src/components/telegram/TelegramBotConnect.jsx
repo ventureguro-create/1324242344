@@ -224,12 +224,10 @@ export function TelegramBotConnect() {
             ) : (
               <button
                 onClick={handleConnect}
-                disabled={connecting || !status?.bot?.configured}
+                disabled={connecting}
                 className={cn(
                   'w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-colors',
-                  status?.bot?.configured
-                    ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                    : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                  'bg-blue-600 hover:bg-blue-500 text-white'
                 )}
               >
                 {connecting ? (
