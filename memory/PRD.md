@@ -1,105 +1,78 @@
-# Telegram Market Intelligence Platform - PRD v9.0
+# Telegram Market Intelligence Platform - PRD v10.0
 
-## Original Problem Statement
-Переход от Alpha Intelligence к **Telegram Market Intelligence Terminal** с объективными метриками:
-- ~~Alpha как главный смысл~~ → Utility-first approach
-- Discovery Engine
-- Growth & Health Analytics  
-- Channel Utility Index
-- Personal Workspace
+## Product Vision
+**Telegram Market Intelligence Terminal** - платформа для объективного анализа Telegram-каналов по измеряемым метрикам.
 
 ---
 
-## Architecture Change: BLOCK U-1 ✅ (NEW)
+## Architecture: Utility-First (Complete)
 
-### Utility-First Re-Architecture
-
-**Было:**
+### Core Metric: Utility Score (0-100)
 ```
-Intel Score = Alpha + Credibility + NetworkAlpha - Fraud
-```
-
-**Стало:**
-```
-Utility Score = 
-  25% Engagement +
-  20% Growth +
-  15% Stability +
-  15% Originality +
-  15% Activity +
-  10% FraudInverse
+Utility = 
+  25% Engagement (views/subs) +
+  20% Growth (30d change) +
+  15% Stability (view consistency) +
+  15% Originality (1 - forward ratio) +
+  15% Activity (posts/day) +
+  10% FraudInverse (1 - fraud risk)
 ```
 
 ### Tier System
-| Tier | Score Range |
-|------|-------------|
-| A+   | 85-100      |
-| A    | 75-84       |
-| B    | 60-74       |
-| C    | 40-59       |
-| D    | 0-39        |
-
-### API Endpoints (NEW)
-```
-GET /api/telegram-intel/intel/list?mode=utility  # Unified endpoint
-GET /api/telegram-intel/utility/list              # Standalone
-GET /api/telegram-intel/utility/channel/:username
-GET /api/telegram-intel/utility/explain           # Formula explanation
-```
-
-### Response Shape
-```json
-{
-  "ok": true,
-  "mode": "utility",
-  "total": 100,
-  "items": [{
-    "username": "alpha_crypto",
-    "utilityScore": 82,
-    "utilityTier": "A",
-    "growth30": 18.2,
-    "engagementRate": 0.14,
-    "stability": 0.76,
-    "forwardRatio": 0.18,
-    "fraudRisk": 0.12,
-    "explain": { ... }
-  }],
-  "stats": {
-    "avgUtility": 65,
-    "avgGrowth30": 8.5,
-    "avgEngagement": 0.11
-  }
-}
-```
+| Tier | Score | Badge Color |
+|------|-------|-------------|
+| A+   | 85+   | Emerald     |
+| A    | 75-84 | Blue        |
+| B    | 60-74 | Sky         |
+| C    | 40-59 | Amber       |
+| D    | <40   | Gray        |
 
 ---
 
 ## What's Been Implemented
 
-### BLOCK U-1: Utility Engine ✅ (2026-02-18)
-- `utility.types.ts` - Type definitions
-- `utility.scoring.ts` - Scoring formula + tier mapping
-- `utility.data.ts` - MongoDB adapter + mock data
-- `utility.service.ts` - Business logic
-- `utility.routes.ts` - REST endpoints
-- Patched `leaderboard.routes.ts` for mode=utility
+### U-2: Frontend Dual Mode ✅
+- Default mode: **Utility** (not Intel)
+- Toggle: `[Utility] [Advanced] [Momentum]`
+- New columns: Utility | Growth | ER | Stability | Original | Fraud
+- Growth Badges: 🔥 Hot (>20%), ⚡ Rising (>10%), ❄️ Cooling (<-5%)
 
-### Previous Implementations
-- PHASE 6: Bot Delivery Layer ✅
-- BLOCK 5.2: Personalized Alerts ✅
-- BLOCK 5.1: Watchlist Core ✅
-- Momentum Engine ✅
-- PATCH-1,2,3: Materialized Leaderboards ✅
+### U-3: Category Intelligence ✅
+- Category filtering in leaderboard
+- Sector-level aggregation
+
+### U-4: Growth Acceleration ✅
+- `acceleration = growth7 - (growth30 / 4)`
+- Tiers: EXPLODING | ACCELERATING | STABLE | DECELERATING
+
+### U-5: Sector Heatmap ✅
+- New page: `/telegram/sectors`
+- Market summary: Total Channels, Avg Utility, Avg Growth, Hot Sectors
+- Sector table with progress bars
+- Trend indicators per category
 
 ---
 
-## Leaderboard Modes
+## API Endpoints
 
-| Mode | Endpoint | Description |
-|------|----------|-------------|
-| `utility` | `?mode=utility` | Objective metrics (DEFAULT) |
-| `intel` | `?mode=intel` | Full intel score |
-| `momentum` | `?mode=momentum` | Growth velocity |
+### Utility
+```
+GET /api/telegram-intel/intel/list?mode=utility
+GET /api/telegram-intel/utility/list
+GET /api/telegram-intel/utility/channel/:username
+GET /api/telegram-intel/utility/explain
+```
+
+### Sector
+```
+GET /api/telegram-intel/sector/overview
+GET /api/telegram-intel/sector/:category
+```
+
+### Bot Delivery (PHASE 6)
+```
+GET/POST /api/telegram-intel/bot/status|connect|preferences|test|webhook
+```
 
 ---
 
@@ -107,37 +80,47 @@ GET /api/telegram-intel/utility/explain           # Formula explanation
 
 | Route | Description |
 |-------|-------------|
-| `/telegram` | Leaderboard (Utility/Intel/Momentum toggle) |
-| `/telegram/movers` | Score change analytics |
-| `/telegram/alerts` | Personal alerts + Bot Connect |
+| `/telegram` | Utility Leaderboard (default) |
+| `/telegram?mode=intel` | Advanced Intel mode |
+| `/telegram?mode=momentum` | Momentum mode |
+| `/telegram/sectors` | Sector Heatmap |
+| `/telegram/movers` | Score changes |
+| `/telegram/alerts` | Personal + System alerts |
 | `/telegram/watchlist` | User's watchlist |
 | `/telegram/:username` | Channel detail |
 
 ---
 
+## Tech Stack
+- **Backend**: Node.js/Fastify + TypeScript
+- **Frontend**: React + Tailwind CSS
+- **Database**: MongoDB
+- **Proxy**: Python FastAPI → Node.js
+
+---
+
 ## Prioritized Backlog
 
-### P0 (Complete)
-- [x] BLOCK U-1: Utility Engine
+### Complete ✅
+- [x] U-1: Utility Engine
+- [x] U-2: Frontend Dual Mode
+- [x] U-3: Category Intelligence
+- [x] U-4: Growth Acceleration
+- [x] U-5: Sector Heatmap
 - [x] PHASE 6: Bot Delivery
-- [x] BLOCK 5.1+5.2: Watchlist + Alerts
 
-### P1 (Next - Frontend)
-- [ ] **BLOCK U-2**: Frontend toggle Utility | Advanced
-- [ ] New Leaderboard columns: Utility | Growth | ER | Stability | Fraud
-- [ ] Channel Page re-structure with Utility focus
+### P1 (Next)
+- [ ] Channel Page Utility-first redesign
+- [ ] Category filtering in UI
+- [ ] Sector rotation tracker (ΔAcceleration)
 
-### P2 (Medium)
-- [ ] Category filtering (Trading/News/NFT/VC)
-- [ ] Growth Acceleration metric
-- [ ] Scheduled delivery job
-
-### P3 (Future)
-- [ ] Export to CSV
+### P2 (Future)
 - [ ] Real-time websocket alerts
+- [ ] Export to CSV
+- [ ] Scheduled alert delivery job
 
 ---
 
 **Last Updated:** 2026-02-18
-**Version:** 9.0.0
-**Status:** BLOCK U-1 Complete ✅
+**Version:** 10.0.0
+**Status:** U-2 through U-5 Complete ✅
