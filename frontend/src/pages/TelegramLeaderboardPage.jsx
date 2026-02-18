@@ -1,10 +1,10 @@
 /**
- * Telegram Leaderboard Page (Block UI-1 + M-3 UI)
- * Production-ready channel ranking dashboard with Intel/Momentum toggle
+ * Telegram Leaderboard Page (Block UI-1 + U-2 + M-3 UI)
+ * Production-ready channel ranking dashboard with Utility/Intel/Momentum toggle
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { RefreshCw, TrendingUp, AlertTriangle } from 'lucide-react';
+import { RefreshCw, TrendingUp, AlertTriangle, BarChart3 } from 'lucide-react';
 import * as telegramApi from '../api/telegramIntel.api';
 import LeaderboardStats from '../components/telegram/LeaderboardStats';
 import FiltersBar from '../components/telegram/FiltersBar';
@@ -18,17 +18,25 @@ export default function TelegramLeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Parse URL params into filters
+  // Parse URL params into filters - utility is default
+  const mode = searchParams.get('mode') || 'utility';
+  
   const filters = {
-    mode: searchParams.get('mode') || 'intel',
+    mode,
     page: Number(searchParams.get('page') || 1),
     limit: Number(searchParams.get('limit') || 25),
     search: searchParams.get('search') || '',
     tier: searchParams.get('tier') || '',
-    sort: searchParams.get('sort') || (searchParams.get('mode') === 'momentum' ? 'momentumScore' : 'intelScore'),
+    sort: searchParams.get('sort') || getDefaultSort(mode),
     minAlpha: searchParams.get('minAlpha') ? Number(searchParams.get('minAlpha')) : undefined,
     maxFraud: searchParams.get('maxFraud') ? Number(searchParams.get('maxFraud')) : undefined,
   };
+
+  function getDefaultSort(m) {
+    if (m === 'utility') return 'utility';
+    if (m === 'momentum') return 'momentumScore';
+    return 'intelScore';
+  }
 
   // Load data
   const loadData = useCallback(async () => {
@@ -61,12 +69,13 @@ export default function TelegramLeaderboardPage() {
   // Update filters (sync to URL)
   const handleFiltersChange = (newFilters) => {
     const params = new URLSearchParams();
-    if (newFilters.mode && newFilters.mode !== 'intel') params.set('mode', newFilters.mode);
+    // utility is default, don't add to URL
+    if (newFilters.mode && newFilters.mode !== 'utility') params.set('mode', newFilters.mode);
     if (newFilters.page && newFilters.page !== 1) params.set('page', newFilters.page);
     if (newFilters.limit && newFilters.limit !== 25) params.set('limit', newFilters.limit);
     if (newFilters.search) params.set('search', newFilters.search);
     if (newFilters.tier) params.set('tier', newFilters.tier);
-    const defaultSort = newFilters.mode === 'momentum' ? 'momentumScore' : 'intelScore';
+    const defaultSort = getDefaultSort(newFilters.mode || 'utility');
     if (newFilters.sort && newFilters.sort !== defaultSort) params.set('sort', newFilters.sort);
     if (newFilters.minAlpha) params.set('minAlpha', newFilters.minAlpha);
     if (newFilters.maxFraud) params.set('maxFraud', newFilters.maxFraud);
@@ -77,6 +86,13 @@ export default function TelegramLeaderboardPage() {
     handleFiltersChange({ ...filters, page });
   };
 
+  // Mode descriptions
+  const modeDescriptions = {
+    utility: 'Top channels by objective metrics: Growth, Engagement, Stability',
+    intel: 'Full intelligence score: Alpha, Credibility, Network',
+    momentum: 'Growth velocity and acceleration trends',
+  };
+
   return (
     <div className="px-6 py-6 space-y-6" data-testid="telegram-leaderboard-page">
       {/* Header */}
@@ -84,9 +100,7 @@ export default function TelegramLeaderboardPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Telegram Leaderboard</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {filters.mode === 'momentum' 
-              ? 'Top channels by momentum score (velocity + acceleration)'
-              : 'Top Telegram intelligence sources ranked by Intel Score'}
+            {modeDescriptions[filters.mode]}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -117,6 +131,12 @@ export default function TelegramLeaderboardPage() {
         >
           <AlertTriangle className="w-4 h-4" /> Alerts
         </Link>
+        <Link 
+          to="/telegram/sectors" 
+          className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1"
+        >
+          <BarChart3 className="w-4 h-4" /> Sectors
+        </Link>
       </div>
 
       {/* Stats Row */}
@@ -138,10 +158,10 @@ export default function TelegramLeaderboardPage() {
       {/* Pagination */}
       {data && (
         <LeaderboardPagination
-          page={data.page}
-          pages={data.pages}
-          total={data.total}
-          limit={data.limit}
+          page={data.page || 1}
+          pages={data.pages || 1}
+          total={data.total || 0}
+          limit={data.limit || 25}
           onPageChange={handlePageChange}
         />
       )}
