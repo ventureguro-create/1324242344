@@ -145,12 +145,22 @@ type TgListItem = {
 - Lucide React icons
 
 ### Backend
-- Python FastAPI (port 8001) - proxy
-- Node.js Fastify (port 8002) - Telegram Intel
+- Python FastAPI (port 8001) - proxy/wrapper
+- Node.js Lite (port 8002) - Telegram Intel API (telegram-lite.mjs)
 - MongoDB
+
+### Backend Architecture (2026-02-21)
+Due to TypeScript compilation OOM issues in the environment, a lightweight JavaScript-only backend was created:
+- **`/app/backend/src/telegram-lite.mjs`** - Standalone JS server that handles:
+  - `GET /api/telegram-intel/utility/list` - Channel list with filtering
+  - `GET /api/telegram-intel/channel/:username/overview` - Channel detail
+  - `GET /api/telegram-intel/compare` - Channel comparison
+- Uses MongoDB aggregation for data when available, falls back to mock data
+- No TypeScript compilation needed at runtime
+- Python wrapper (`server.py`) proxies all `/api/telegram-intel/*` routes to port 8002
 
 ---
 
 **Last Updated:** 2026-02-21
-**Version:** 14.0.0
-**Status:** UI-FREEZE-1 Complete ✅
+**Version:** 14.1.0
+**Status:** Backend Fixed ✅, Live Data Connected ✅
