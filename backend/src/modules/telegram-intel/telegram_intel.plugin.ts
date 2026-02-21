@@ -257,6 +257,14 @@ export const telegramIntelPlugin: FastifyPluginAsync = async (fastify) => {
   
   await fastify.register((await import('./signals/signals.routes.js')).signalsRoutes);
 
+  // ==================== Utility List v2 (UI-FREEZE-1) ====================
+  
+  await fastify.register((await import('./utility/utility.list.routes.js')).utilityListRoutes);
+
+  // ==================== Channel Overview (UI-FREEZE-1) ====================
+  
+  await fastify.register((await import('./utility/channel.overview.routes.js')).channelOverviewRoutes);
+
   // ==================== Shutdown ====================
 
   fastify.addHook('onClose', async () => {
