@@ -473,6 +473,20 @@ export async function runUserAlerts(params = {}) {
   return response.data;
 }
 
+// ==================== Recommendations (U-8) ====================
+
+/**
+ * Get similar channels based on utility metrics
+ * @param {string} username - Channel username
+ * @param {number} limit - Max number of similar channels (default 6)
+ */
+export async function getSimilarChannels(username, limit = 6) {
+  const response = await api.get(`${API_PUBLIC}/channel/${username}/similar`, {
+    params: { limit },
+  });
+  return response.data;
+}
+
 export default {
   getTelegramIntelHealth,
   getIntelTop,
