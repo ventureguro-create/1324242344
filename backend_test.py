@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for U-8 Recommendation Engine
-Tests the Similar Channels API endpoint
+Backend API Testing for U-9 (Lifecycle Transitions) and U-10 (Signal Engine)
+Tests Telegram Intelligence module endpoints
 """
 
 import requests
@@ -9,7 +9,7 @@ import sys
 import json
 from datetime import datetime
 
-class U8RecommendationTester:
+class TelegramIntelTester:
     def __init__(self, base_url="https://20f31160-bba4-489a-bca3-9360eb80f264.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
