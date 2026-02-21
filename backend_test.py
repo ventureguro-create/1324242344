@@ -714,7 +714,7 @@ class TelegramIntelUtilityAPITester:
 
     def run_all_tests(self):
         """Run all API tests"""
-        print("🚀 Starting Telegram Intel BLOCK U-2 to U-5 Utility Architecture API Tests...")
+        print("🚀 Starting Telegram Intel U-6 & U-7 Sector Rotation + Lifecycle API Tests...")
         print(f"Testing against: {self.base_url}")
         print("=" * 60)
         
