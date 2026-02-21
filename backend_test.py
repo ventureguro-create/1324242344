@@ -295,23 +295,35 @@ class TelegramIntelTester:
             return False
 
     def run_all_tests(self):
-        """Run all API tests for U-8 Recommendation Engine"""
-        print("🚀 Starting U-8 Recommendation Engine Backend API Tests...")
+        """Run all API tests for U-9 and U-10"""
+        print("🚀 Starting U-9 (Lifecycle Transitions) and U-10 (Signal Engine) Backend API Tests...")
         print(f"Testing against: {self.base_url}")
         print("=" * 60)
         
-        # Skip health check and directly test the recommendation API
-        print("ℹ️ Skipping health check (endpoint not available), testing recommendation API directly...")
-        
-        # Test U-8 Recommendation Engine APIs
-        tests = [
-            self.test_similar_channels_api_structure,
-            self.test_similar_channels_item_structure, 
-            self.test_api_with_limit_parameter,
-            self.test_nonexistent_channel,
+        # Test U-9 Lifecycle Transitions APIs
+        print("\n📊 Testing U-9: Lifecycle Transitions")
+        u9_tests = [
+            self.test_lifecycle_transitions_api,
+            self.test_lifecycle_transitions_item_structure,
+            self.test_lifecycle_transitions_with_params,
         ]
         
-        for test in tests:
+        for test in u9_tests:
+            try:
+                test()
+            except Exception as e:
+                print(f"❌ Test {test.__name__} crashed: {str(e)}")
+                self.errors.append(f"{test.__name__}: Crashed - {str(e)}")
+        
+        print("\n🔄 Testing U-10: Signal Engine")
+        u10_tests = [
+            self.test_signals_api,
+            self.test_signals_item_structure,
+            self.test_signals_with_params,
+            self.test_signals_single_item,
+        ]
+        
+        for test in u10_tests:
             try:
                 test()
             except Exception as e:
@@ -343,7 +355,7 @@ class TelegramIntelTester:
 
 def main():
     """Main test function"""
-    tester = U8RecommendationTester()
+    tester = TelegramIntelTester()
     return tester.run_all_tests()
 
 if __name__ == "__main__":
