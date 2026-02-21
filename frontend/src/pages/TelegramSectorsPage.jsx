@@ -119,14 +119,24 @@ export default function TelegramSectorsPage() {
             </p>
           </div>
         </div>
-        <button
-          onClick={loadSectors}
-          disabled={loading}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          data-testid="refresh-sectors-btn"
-        >
-          <RefreshCw className={`w-5 h-5 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/telegram/rotation"
+            className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            data-testid="rotation-link"
+          >
+            <TrendingUp className="w-4 h-4 inline mr-1" />
+            Rotation
+          </Link>
+          <button
+            onClick={loadSectors}
+            disabled={loading}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            data-testid="refresh-sectors-btn"
+          >
+            <RefreshCw className={`w-5 h-5 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Market Summary */}
