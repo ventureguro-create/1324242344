@@ -273,7 +273,9 @@ function EntityRow({ entity }) {
       <td className="px-4 py-4 text-center">
         <div className="flex items-center justify-center gap-1">
           <span className="text-sm text-gray-700">{entity.redFlags}</span>
-          <Flag className="w-3.5 h-3.5 text-red-400" />
+          <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4 2v20h2v-8h12l-2-4 2-4H6V2H4z"/>
+          </svg>
         </div>
       </td>
 
