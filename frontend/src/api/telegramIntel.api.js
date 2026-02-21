@@ -487,6 +487,56 @@ export async function getSimilarChannels(username, limit = 6) {
   return response.data;
 }
 
+// ==================== Lifecycle Transitions (U-9) ====================
+
+/**
+ * Get lifecycle transitions
+ * @param {object} params - { days, limit, filter }
+ */
+export async function getLifecycleTransitions(params = {}) {
+  const response = await api.get(`${API_PUBLIC}/lifecycle/transitions`, { params });
+  return response.data;
+}
+
+/**
+ * Run lifecycle transitions computation (admin)
+ */
+export async function runLifecycleTransitions(days = 7) {
+  const response = await api.post(`${API_BASE}/lifecycle/transitions/run`, null, {
+    params: { days },
+  });
+  return response.data;
+}
+
+// ==================== Signals (U-10) ====================
+
+/**
+ * Get signals list
+ * @param {object} params - { days, limit, type, severity }
+ */
+export async function getSignals(params = {}) {
+  const response = await api.get(`${API_PUBLIC}/signals`, { params });
+  return response.data;
+}
+
+/**
+ * Get single signal by ID
+ */
+export async function getSignal(id) {
+  const response = await api.get(`${API_PUBLIC}/signals/${id}`);
+  return response.data;
+}
+
+/**
+ * Run signal generation (admin)
+ */
+export async function runSignals(days = 7) {
+  const response = await api.post(`${API_BASE}/signals/run`, null, {
+    params: { days },
+  });
+  return response.data;
+}
+
 export default {
   getTelegramIntelHealth,
   getIntelTop,
