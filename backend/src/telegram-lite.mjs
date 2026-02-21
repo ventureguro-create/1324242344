@@ -622,7 +622,7 @@ const MOCK_CHANNELS = [
 ];
 
 function getMockList(filters) {
-  const { sort, page, limit } = filters;
+  const { q, type, minMembers, maxMembers, minGrowth7, maxGrowth7, activity, maxRedFlags, lifecycle, sort, page, limit } = filters;
   let items = MOCK_CHANNELS.map((ch, i) => ({
     username: ch.username,
     title: formatTitle(ch.username),
@@ -646,15 +646,46 @@ function getMockList(filters) {
     updatedAt: new Date().toISOString(),
   }));
 
-  items.sort((a, b) => b.fomoScore - a.fomoScore);
+  // Apply filters
+  if (q) {
+    const search = q.toLowerCase();
+    items = items.filter(item => item.username.toLowerCase().includes(search) || item.title.toLowerCase().includes(search));
+  }
+  if (type === 'channel') items = items.filter(item => item.type === 'Channel');
+  else if (type === 'group') items = items.filter(item => item.type === 'Group');
+  if (minMembers !== undefined) items = items.filter(item => item.members >= minMembers);
+  if (maxMembers !== undefined) items = items.filter(item => item.members <= maxMembers);
+  if (minGrowth7 !== undefined) items = items.filter(item => item.growth7 >= minGrowth7);
+  if (maxGrowth7 !== undefined) items = items.filter(item => item.growth7 <= maxGrowth7);
+  if (activity) items = items.filter(item => item.activity === activity);
+  if (maxRedFlags !== undefined) items = items.filter(item => item.redFlags <= maxRedFlags);
+  if (lifecycle) items = items.filter(item => item.lifecycle === lifecycle);
+
+  // Sort
+  switch (sort) {
+    case 'growth': items.sort((a, b) => b.growth7 - a.growth7); break;
+    case 'members': items.sort((a, b) => b.members - a.members); break;
+    case 'reach': items.sort((a, b) => b.avgReach - a.avgReach); break;
+    default: items.sort((a, b) => b.fomoScore - a.fomoScore);
+  }
+
+  const total = items.length;
+  const startIdx = (page - 1) * limit;
+  const paginatedItems = items.slice(startIdx, startIdx + limit);
+
   return {
     ok: true,
-    items: items.slice(0, limit),
-    total: items.length,
+    items: paginatedItems,
+    total,
     page,
     limit,
     source: 'mock',
-    stats: { tracked: items.length, avgUtility: 70, highGrowth: 3, highRisk: 0 },
+    stats: { 
+      tracked: total, 
+      avgUtility: Math.round(items.reduce((s, i) => s + i.fomoScore, 0) / Math.max(1, items.length)), 
+      highGrowth: items.filter(i => i.growth7 >= 10).length, 
+      highRisk: items.filter(i => i.redFlags >= 3).length 
+    },
   };
 }
 
