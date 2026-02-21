@@ -569,6 +569,149 @@ class TelegramIntelUtilityAPITester:
         else:
             self.log_result("Sector Overview API", False, details)
 
+    def test_sector_rotation_api(self):
+        """Test GET /api/telegram-intel/sector/rotation?days=7 (U-6)"""
+        print("\n🔍 Testing Sector Rotation API (U-6)...")
+        
+        for days in [7, 14, 30]:
+            print(f"   Testing {days}-day rotation...")
+            success, details, data = self.make_request('GET', f'/api/telegram-intel/sector/rotation?days={days}')
+            
+            if success and data:
+                expected_fields = ['ok', 'days', 'rows']
+                missing_fields = [field for field in expected_fields if field not in data]
+                
+                if not missing_fields:
+                    rows = data.get('rows', [])
+                    returned_days = data.get('days')
+                    
+                    print(f"     Days parameter: {returned_days} (expected: {days})")
+                    print(f"     Rotation rows: {len(rows)}")
+                    
+                    # Check if days parameter matches
+                    days_correct = returned_days == days
+                    
+                    if rows:
+                        sample_row = rows[0]
+                        required_row_fields = ['category', 'avgAcceleration', 'deltaAcceleration', 'status']
+                        missing_row_fields = [field for field in required_row_fields if field not in sample_row]
+                        
+                        if not missing_row_fields:
+                            print(f"     Sample category: {sample_row['category']}")
+                            print(f"     Delta acceleration: {sample_row['deltaAcceleration']}")
+                            print(f"     Status: {sample_row['status']}")
+                            
+                            # Validate rotation status
+                            valid_statuses = ['ROTATING_IN', 'ROTATING_OUT', 'STABLE']
+                            status_valid = sample_row['status'] in valid_statuses
+                            
+                            # Check delta values are numeric
+                            delta_valid = isinstance(sample_row['deltaAcceleration'], (int, float))
+                            
+                            if days_correct and status_valid and delta_valid:
+                                self.log_result(f"Sector Rotation API ({days}d)", True, f"Valid rotation data with {len(rows)} sectors")
+                            else:
+                                issues = []
+                                if not days_correct: issues.append("wrong days")
+                                if not status_valid: issues.append("invalid status")
+                                if not delta_valid: issues.append("invalid delta")
+                                self.log_result(f"Sector Rotation API ({days}d)", False, f"Issues: {', '.join(issues)}")
+                        else:
+                            self.log_result(f"Sector Rotation API ({days}d)", False, f"Row missing fields: {missing_row_fields}")
+                    else:
+                        # Check if there's a note about missing snapshots
+                        note = data.get('note', '')
+                        if 'Missing sector snapshots' in note:
+                            print(f"     Note: {note}")
+                            self.log_result(f"Sector Rotation API ({days}d)", True, "Empty rows with informative note")
+                        else:
+                            self.log_result(f"Sector Rotation API ({days}d)", True, "Empty rows (expected for empty database)")
+                else:
+                    self.log_result(f"Sector Rotation API ({days}d)", False, f"Missing fields: {missing_fields}")
+            else:
+                self.log_result(f"Sector Rotation API ({days}d)", False, details)
+
+    def test_lifecycle_api(self):
+        """Test GET /api/telegram-intel/lifecycle (U-7)"""
+        print("\n🔍 Testing Channel Lifecycle API (U-7)...")
+        success, details, data = self.make_request('GET', '/api/telegram-intel/lifecycle')
+        
+        if success and data:
+            expected_fields = ['ok', 'total', 'items', 'summary']
+            missing_fields = [field for field in expected_fields if field not in data]
+            
+            if not missing_fields:
+                items = data.get('items', [])
+                summary = data.get('summary', {})
+                total = data.get('total', 0)
+                
+                print(f"   Total channels: {total}")
+                print(f"   Items returned: {len(items)}")
+                print(f"   Summary available: {bool(summary)}")
+                
+                if items:
+                    sample_item = items[0]
+                    required_item_fields = ['username', 'lifecycle', 'description', 'emoji', 'metrics']
+                    missing_item_fields = [field for field in required_item_fields if field not in sample_item]
+                    
+                    if not missing_item_fields:
+                        print(f"   Sample channel: {sample_item['username']}")
+                        print(f"   Lifecycle stage: {sample_item['lifecycle']}")
+                        print(f"   Description: {sample_item['description']}")
+                        print(f"   Emoji: {sample_item['emoji']}")
+                        
+                        # Check metrics structure
+                        metrics = sample_item.get('metrics', {})
+                        required_metrics = ['utilityScore', 'growth30', 'acceleration', 'stability']
+                        metrics_complete = all(metric in metrics for metric in required_metrics)
+                        
+                        print(f"   Metrics complete: {metrics_complete}")
+                        if metrics_complete:
+                            print(f"   Utility score: {metrics['utilityScore']}")
+                            print(f"   Growth30: {metrics['growth30']}")
+                            print(f"   Acceleration: {metrics['acceleration']}")
+                        
+                        # Validate lifecycle stage
+                        valid_stages = ['EMERGING', 'EXPANDING', 'MATURE', 'SATURATED', 'DECLINING', 'STABLE']
+                        stage_valid = sample_item['lifecycle'] in valid_stages
+                        
+                        if metrics_complete and stage_valid:
+                            self.log_result("Lifecycle API", True, f"Valid lifecycle data with {len(items)} channels")
+                        else:
+                            issues = []
+                            if not metrics_complete: issues.append("incomplete metrics")
+                            if not stage_valid: issues.append("invalid stage")
+                            self.log_result("Lifecycle API", False, f"Issues: {', '.join(issues)}")
+                    else:
+                        self.log_result("Lifecycle API", False, f"Item missing fields: {missing_item_fields}")
+                else:
+                    # Empty items is okay for empty database
+                    self.log_result("Lifecycle API", True, "Empty items (expected for empty database)")
+                
+                # Check summary structure
+                if summary:
+                    expected_stages = ['EMERGING', 'EXPANDING', 'MATURE', 'SATURATED', 'DECLINING', 'STABLE']
+                    summary_complete = all(stage in summary for stage in expected_stages)
+                    
+                    if summary_complete:
+                        total_in_summary = sum(summary.values())
+                        print(f"   Summary stages complete: {summary_complete}")
+                        print(f"   Total in summary: {total_in_summary}")
+                        print(f"   EMERGING: {summary['EMERGING']}, EXPANDING: {summary['EXPANDING']}")
+                        print(f"   MATURE: {summary['MATURE']}, STABLE: {summary['STABLE']}")
+                        
+                        # Summary totals should match items length
+                        if total_in_summary == len(items):
+                            print(f"   ✅ Summary counts match items count")
+                        else:
+                            print(f"   ⚠️ Summary total {total_in_summary} != items count {len(items)}")
+                    else:
+                        print(f"   ❌ Summary missing stages")
+            else:
+                self.log_result("Lifecycle API", False, f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Lifecycle API", False, details)
+
     def run_all_tests(self):
         """Run all API tests"""
         print("🚀 Starting Telegram Intel BLOCK U-2 to U-5 Utility Architecture API Tests...")
