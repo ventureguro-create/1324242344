@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Telegram Intel with BLOCK U-1 Utility Engine
-Tests utility endpoints and existing telegram-intel APIs
+Backend API Testing for U-8 Recommendation Engine
+Tests the Similar Channels API endpoint
 """
 
 import requests
@@ -9,8 +9,8 @@ import sys
 import json
 from datetime import datetime
 
-class TelegramIntelUtilityAPITester:
-    def __init__(self, base_url="https://tg-isolated.preview.emergentagent.com"):
+class U8RecommendationTester:
+    def __init__(self, base_url="https://20f31160-bba4-489a-bca3-9360eb80f264.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
