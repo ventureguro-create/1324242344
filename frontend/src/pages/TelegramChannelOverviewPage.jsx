@@ -608,23 +608,142 @@ function ActivityBadgeSmall({ level }) {
 }
 
 function CompareModal({ channel1, onClose }) {
+  const [channel2, setChannel2] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Search for channels to compare
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchTerm.trim()) return;
+    
+    setSearching(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/telegram-intel/utility/list?q=${encodeURIComponent(searchTerm)}&limit=5`);
+      const data = await res.json();
+      setSearchResults(data.items || []);
+    } catch (err) {
+      console.error('Search error:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // Select a channel for comparison
+  const selectChannel = async (username) => {
+    if (username === channel1.profile.username) return; // Can't compare with itself
+    
+    setLoading(true);
+    setSearchResults([]);
+    setSearchTerm('');
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/telegram-intel/channel/${username}/overview`);
+      const data = await res.json();
+      if (data.ok) {
+        setChannel2(data);
+      }
+    } catch (err) {
+      console.error('Load channel error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate diff for metrics
+  const getDiff = (val1, val2) => {
+    if (!val2 || val1 === val2) return null;
+    const diff = ((val1 - val2) / val2 * 100).toFixed(1);
+    return diff > 0 ? `+${diff}%` : `${diff}%`;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={onClose}>
       <div 
         className="bg-white rounded-xl w-[900px] max-h-[90vh] overflow-auto p-6"
         onClick={e => e.stopPropagation()}
+        data-testid="compare-modal"
       >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Comparison</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl" data-testid="close-compare">×</button>
         </div>
         
         <div className="grid grid-cols-2 gap-8">
           {/* Left Channel */}
-          <CompareColumn channel={channel1} />
+          <CompareColumn channel={channel1} isLeft />
           
-          {/* Right Channel - Placeholder */}
-          <CompareColumn channel={channel1} />
+          {/* Right Channel - Search or Selected */}
+          {channel2 ? (
+            <div>
+              <button 
+                onClick={() => setChannel2(null)}
+                className="text-xs text-gray-500 hover:text-gray-700 mb-4"
+              >
+                ← Change channel
+              </button>
+              <CompareColumn channel={channel2} compareWith={channel1} />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Search channel to compare..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-100"
+                  data-testid="compare-search"
+                />
+                <button 
+                  type="submit"
+                  disabled={searching}
+                  className="px-4 py-2 bg-teal-500 text-white rounded-lg text-sm hover:bg-teal-600 disabled:opacity-50"
+                >
+                  {searching ? '...' : 'Search'}
+                </button>
+              </form>
+              
+              {loading && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 text-teal-500 animate-spin" />
+                </div>
+              )}
+              
+              {searchResults.length > 0 && (
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  {searchResults.map(ch => (
+                    <button
+                      key={ch.username}
+                      onClick={() => selectChannel(ch.username)}
+                      disabled={ch.username === channel1.profile.username}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      data-testid={`compare-option-${ch.username}`}
+                    >
+                      <div 
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+                        style={{ backgroundColor: ch.avatarColor }}
+                      >
+                        {ch.title?.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">{ch.title}</div>
+                        <div className="text-xs text-gray-500">{ch.type} • Score: {ch.fomoScore}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              
+              {!loading && searchResults.length === 0 && !searchTerm && (
+                <div className="text-center py-8 text-gray-400 text-sm">
+                  Search for a channel to compare
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
