@@ -1,154 +1,156 @@
-# Telegram Market Intelligence Platform - PRD v13.0
+# Telegram Market Intelligence Platform - PRD v14.0
 
 ## Product Vision
-**Telegram Market Intelligence Terminal** - полная система для объективного анализа Telegram-каналов:
-1. **Channel Level** → Utility + Lifecycle + Similar Channels
-2. **Sector Level** → Heatmap + Benchmarks  
-3. **Macro Level** → Rotation Tracker
-4. **Intelligence Level** → Transitions + Signals (NEW)
+**Telegram Market Intelligence Terminal** - терминал для анализа Telegram-каналов внутри FOMO платформы.
 
 ---
 
-## Architecture Complete
+## Финальная Архитектура (UI-FREEZE-1)
 
-### U-1: Utility Engine ✅
-```
-Utility = 25% Engagement + 20% Growth + 15% Stability + 15% Originality + 15% Activity + 10% FraudInverse
-```
+### A) Главная страница /telegram (Entities Overview)
+**Цель**: найти и отобрать полезные TG-каналы
 
-### U-6: Sector Rotation ✅
-- Daily sector snapshots
-- ΔAcceleration, ΔUtility, ΔGrowth tracking
+Компоненты:
+- Search bar
+- Stats cards (Funds, Projects)
+- Social platform icons
+- Ad Mode / Filter buttons
+- Entities Table с колонками:
+  - Channel/Group (avatar + title)
+  - Type (Channel/Group)
+  - Members
+  - Avg Reach
+  - Growth (7D) — colored (+green/-red)
+  - Activity (High/Medium/Low badges)
+  - Red Flags (count + flag icon)
+  - FOMO Score (score + star + engagement + thumbs up)
+- Pagination
 
-### U-7: Channel Lifecycle ✅
-| Stage | Condition |
-|-------|-----------|
-| EMERGING | High growth + small channel OR high acceleration |
-| EXPANDING | growth30 > 15% + acceleration > 3% |
-| MATURE | Stable growth + high utility + high stability |
-| SATURATED | Low growth + decelerating + good utility |
-| DECLINING | Negative growth OR strong deceleration |
-| STABLE | Default state |
+### B) Страница канала /telegram/:username (Channel Overview)
+**Цель**: понять "почему этот канал хороший/плохой"
 
-### U-8: Recommendation Engine ✅
-- Similar Channels based on utility metrics
-- Similarity scoring: 35% utility + 25% ER + 15% growth + 15% stability + 10% size
+Layout: 2-column grid (8+4 cols)
 
-### U-9: Lifecycle Transitions ✅ (NEW - 2026-02-21)
-Tracks lifecycle stage changes over time.
+**Left Column (8 cols):**
+- Channel Header (avatar, title, type, buttons)
+- Top Cards Row (Subscribers, Views/Post, Messages/Day, Activity)
+- Activity Overview, Audience Snapshot, Product Overview (3-col)
+- Engagement Timeline (chart with 24H/7D/30D/90D)
+- Recent Posts
 
-**Impact Score Formula:**
-```
-impact = 0.45 * ΔUtility + 0.35 * ΔAcceleration + 0.20 * (ΔER * 100) - 0.30 * (ΔFraud * 100)
-```
+**Right Column (4 cols):**
+- AI Summary (auto-generated)
+- Channel Snapshot (Live)
+- Health & Safety (progress bars)
+- Related Channels
 
-**Transition Types:**
-| From | To | Signal |
-|------|----|--------|
-| EMERGING → EXPANDING | Strong growth signal |
-| EXPANDING → MATURE | Confirmed growth |
-| MATURE → SATURATED | Caution |
-| ANY → DECLINING | Risk |
-
-### U-10: Signal Engine ✅ (NEW - 2026-02-21)
-Actionable intelligence from utility, rotation, lifecycle.
-
-**Signal Types:**
-| Type | Description | Scoring |
-|------|-------------|---------|
-| SUBSCRIBE_CANDIDATE | Good channels to follow | 45% utility + 25% ER + 20% acc + 10% fraud |
-| RISING_UTILITY | Utility + acceleration increase | 50% utility + 35% acc + 15% fraud |
-| LIFECYCLE_PROMOTION | Stage upgrades | 50% impact + 30% Δacc + 20% fraud |
-| QUALITY_ALERT | Risk signals | 40% fraud + 30% declining + 30% decel |
-
-**Severity Levels:**
-- HIGH (score >= 80): Immediate attention
-- MED (score 60-79): Monitor closely
-- LOW (score < 60): Background signal
+### C) Compare Modal
+- Side-by-side comparison
+- Sections: Basics, AI Summary, Activity Overview, Audience Snapshot, Channel Snapshot, Health & Safety, Product Overview
 
 ---
 
-## API Endpoints
+## Что Анализируем (Market Utility Terminal)
 
-### Utility
-```
-GET /api/telegram-intel/intel/list?mode=utility
-GET /api/telegram-intel/channel/:username/similar?limit=6
+1. **Охват/Reach** — views/post, median views
+2. **Рост/Growth** — reach/activity/audience changes
+3. **Активность/Activity** — posts/day, active days
+4. **Вовлечение/Engagement** — forwards/replies/reactions
+5. **Стабильность/Stability** — без искусственных графиков
+6. **Red Flags** — fraud/promo/spike detection
+
+Alpha/NetAlpha/Credibility/Momentum — внутренние продвинутые режимы на detail странице.
+
+---
+
+## Реализованные Блоки
+
+### Complete ✅
+- [x] U-1 to U-10: Utility Engine, Lifecycle, Transitions, Signals
+- [x] UI-FREEZE-1: Entities Overview (2026-02-21)
+- [x] UI-FREEZE-1: Channel Overview (2026-02-21)
+- [x] UI-FREEZE-1: Compare Modal (2026-02-21)
+
+---
+
+## API Endpoints (Контракты)
+
+### GET /api/telegram-intel/utility/list
+```typescript
+type TgListItem = {
+  username: string;
+  title: string;
+  avatarUrl?: string | null;
+  type: "channel" | "group";
+  members?: number | null;
+  avgReach30?: number | null;
+  growth7?: number | null;
+  activityLabel: "High" | "Medium" | "Low";
+  redFlagsCount: number;
+  utilityScore: number;
+  updatedAt: string;
+};
 ```
 
-### Lifecycle
-```
-GET /api/telegram-intel/lifecycle
-GET /api/telegram-intel/lifecycle/transitions?days=7&filter=EMERGING_TO_EXPANDING
-POST /api/admin/telegram-intel/lifecycle/transitions/run?days=7
-```
+### GET /api/telegram-intel/channel/:username/overview
+Полный контракт для detail page с profile, topCards, aiSummary, activityOverview, audienceSnapshot, productOverview, channelSnapshot, healthSafety, relatedChannels, timeline, recentPosts.
 
-### Signals (U-10)
-```
-GET /api/telegram-intel/signals?days=7&type=SUBSCRIBE_CANDIDATE&severity=HIGH
-GET /api/telegram-intel/signals/:id
-POST /api/admin/telegram-intel/signals/run?days=7
-```
+### GET /api/telegram-intel/compare?left=:u1&right=:u2
+Сравнение двух каналов.
 
 ---
 
 ## Frontend Routes
 
-| Route | Description |
-|-------|-------------|
-| `/telegram` | Utility Leaderboard |
-| `/telegram/sectors` | Sector Heatmap |
-| `/telegram/rotation` | Sector Rotation |
-| `/telegram/transitions` | Lifecycle Transitions (U-9) |
-| `/telegram/signals` | Actionable Signals (U-10) |
-| `/telegram/:username` | Channel Detail + Similar |
+| Route | Page | Status |
+|-------|------|--------|
+| `/telegram` | Entities Overview | ✅ UI-FREEZE |
+| `/telegram/:username` | Channel Overview | ✅ UI-FREEZE |
+| `/telegram/leaderboard` | Legacy Leaderboard | Legacy |
+| `/telegram/transitions` | Lifecycle Transitions | ✅ |
+| `/telegram/signals` | Actionable Signals | ✅ |
 
 ---
 
-## What's Been Implemented
+## Дорожная Карта
 
-### Complete ✅
-- [x] U-1: Utility Engine
-- [x] U-2: Frontend Dual Mode
-- [x] U-3: Category Intelligence
-- [x] U-4: Growth Acceleration
-- [x] U-5: Sector Heatmap
-- [x] U-6: Sector Rotation
-- [x] U-7: Channel Lifecycle
-- [x] U-8: Recommendation Engine (2026-02-21)
-- [x] U-9: Lifecycle Transitions (2026-02-21)
-- [x] U-10: Signal Engine (2026-02-21)
-- [x] PHASE 6: Bot Delivery
+### Этап 1 — UI как на референсе ✅ COMPLETE
+- [x] /telegram = Entities Overview
+- [x] /telegram/:username = Channel Overview
+- [x] Compare modal
 
----
+### Этап 2 — Фильтры (NEXT)
+- [ ] Filter drawer: category, type, members range, avg reach, growth7, posts/day, engagement, redflags max, language
+- [ ] URL sync
+- [ ] Presets: "Fast growing", "High reach low spam", "New emerging"
 
-## Next Steps (P1)
+### Этап 3 — Реальные данные MTProto
+- [ ] Подключить ingestion runtime
+- [ ] Обновления по расписанию
+- [ ] "last updated" в UI
 
-### U-11: Delivery Layer
-- Push signals to Telegram via bot
-- In-app notifications
-- Personalized thresholds for watchlist
-
-### Channel Page Enhancements
-- Signal badges on channel cards
-- Recent transitions indicator
-- Alert subscription button
+### Этап 4 — Pro-слой
+- [ ] Расширенные формулы
+- [ ] AI summary
+- [ ] Export
 
 ---
 
 ## Technical Notes
 
-### Backend Architecture
-- Python FastAPI (port 8001) - proxy server
-- Node.js Fastify (port 8002) - Telegram Intel module
-- MongoDB - data storage
+### Stack
+- React + React Router (not Next.js)
+- Tailwind CSS
+- Light theme only (no dark mode)
+- Lucide React icons
 
-### Mock Mode
-- TG_UTILITY_MOCK=1 enables mock data adapter
-- 5 test channels with realistic transitions and signals
+### Backend
+- Python FastAPI (port 8001) - proxy
+- Node.js Fastify (port 8002) - Telegram Intel
+- MongoDB
 
 ---
 
 **Last Updated:** 2026-02-21
-**Version:** 13.0.0
-**Status:** U-9 + U-10 Complete ✅
+**Version:** 14.0.0
+**Status:** UI-FREEZE-1 Complete ✅
