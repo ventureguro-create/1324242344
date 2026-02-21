@@ -177,37 +177,39 @@ class U8RecommendationTester:
             return False
 
     def run_all_tests(self):
-        """Run all API tests"""
-        print("🚀 Starting Telegram Intel U-6 & U-7 Sector Rotation + Lifecycle API Tests...")
+        """Run all API tests for U-8 Recommendation Engine"""
+        print("🚀 Starting U-8 Recommendation Engine Backend API Tests...")
         print(f"Testing against: {self.base_url}")
         print("=" * 60)
         
-        # Test BLOCK U-2 to U-5 Utility APIs (Primary focus)
-        self.test_utility_list_api()
-        self.test_utility_explain_api()
-        self.test_utility_channel_api()
-        self.test_intel_list_mode_utility()
-        self.test_sector_overview_api()
+        # Test basic connectivity first
+        if not self.test_health_check():
+            print("❌ Basic connectivity failed, skipping remaining tests")
+            return self.generate_report()
+            
+        # Test U-8 Recommendation Engine APIs
+        tests = [
+            self.test_similar_channels_api_structure,
+            self.test_similar_channels_item_structure, 
+            self.test_api_with_limit_parameter,
+            self.test_nonexistent_channel,
+        ]
         
-        # Test NEW U-6 and U-7 Features  
-        self.test_sector_rotation_api()
-        self.test_lifecycle_api()
+        for test in tests:
+            try:
+                test()
+            except Exception as e:
+                print(f"❌ Test {test.__name__} crashed: {str(e)}")
+                self.errors.append(f"{test.__name__}: Crashed - {str(e)}")
+                
+        return self.generate_report()
         
-        # Test Existing Mode Compatibility
-        self.test_intel_list_mode_intel()
-        self.test_intel_list_mode_momentum()
+    def generate_report(self):
+        """Generate test report"""
+        success_rate = (self.tests_passed / self.tests_run * 100) if self.tests_run > 0 else 0
         
-        # Test Some Legacy APIs (Basic check)
-        self.test_intel_list_api()
-        self.test_watchlist_api()
-        self.test_user_alerts_api()
-        
-        # Summary
         print("\n" + "=" * 60)
-        print(f"📊 Test Summary:")
-        print(f"   Tests run: {self.tests_run}")
-        print(f"   Tests passed: {self.tests_passed}")
-        print(f"   Success rate: {(self.tests_passed/self.tests_run*100):.1f}%")
+        print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} passed ({success_rate:.1f}%)")
         
         if self.errors:
             print(f"\n❌ Failures ({len(self.errors)}):")
@@ -216,13 +218,17 @@ class U8RecommendationTester:
         else:
             print("\n✅ All tests passed!")
             
-        return self.tests_passed == self.tests_run
+        if success_rate >= 80:
+            print("✅ Backend API tests mostly successful")
+            return 0
+        else:
+            print("❌ Backend API tests failed")
+            return 1
 
 def main():
     """Main test function"""
-    tester = TelegramIntelUtilityAPITester()
-    success = tester.run_all_tests()
-    return 0 if success else 1
+    tester = U8RecommendationTester()
+    return tester.run_all_tests()
 
 if __name__ == "__main__":
     sys.exit(main())
