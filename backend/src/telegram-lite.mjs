@@ -50,11 +50,10 @@ function loadSecrets() {
   }
   try {
     let encrypted = fs.readFileSync(filePath, 'utf-8').trim();
-    // Add padding if needed
-    const pad = 4 - (encrypted.length % 4);
-    if (pad !== 4) encrypted += '='.repeat(pad);
-    const encryptedBuffer = Buffer.from(encrypted, 'base64url');
-    const keyBuffer = Buffer.from(key, 'base64');
+    // Fernet uses standard base64
+    const encryptedBuffer = Buffer.from(encrypted, 'base64');
+    // Key is base64url encoded
+    const keyBuffer = Buffer.from(key, 'base64url');
     const decrypted = fernetDecrypt(encryptedBuffer, keyBuffer);
     const data = JSON.parse(decrypted.toString('utf-8'));
     console.log('[Secrets] Loaded encrypted secrets');
