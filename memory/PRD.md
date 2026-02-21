@@ -1,10 +1,11 @@
-# Telegram Market Intelligence Platform - PRD v12.0
+# Telegram Market Intelligence Platform - PRD v13.0
 
 ## Product Vision
-**Telegram Market Intelligence Terminal** - полная система для объективного анализа Telegram-каналов с иерархией:
+**Telegram Market Intelligence Terminal** - полная система для объективного анализа Telegram-каналов:
 1. **Channel Level** → Utility + Lifecycle + Similar Channels
 2. **Sector Level** → Heatmap + Benchmarks  
 3. **Macro Level** → Rotation Tracker
+4. **Intelligence Level** → Transitions + Signals (NEW)
 
 ---
 
@@ -18,7 +19,6 @@ Utility = 25% Engagement + 20% Growth + 15% Stability + 15% Originality + 15% Ac
 ### U-6: Sector Rotation ✅
 - Daily sector snapshots
 - ΔAcceleration, ΔUtility, ΔGrowth tracking
-- Status: ROTATING_IN (≥+3%), ROTATING_OUT (≤-3%), STABLE
 
 ### U-7: Channel Lifecycle ✅
 | Stage | Condition |
@@ -30,26 +30,41 @@ Utility = 25% Engagement + 20% Growth + 15% Stability + 15% Originality + 15% Ac
 | DECLINING | Negative growth OR strong deceleration |
 | STABLE | Default state |
 
-### U-8: Recommendation Engine ✅ (NEW - 2026-02-21)
-**Similar Channels** - структурированная релевантность без ML
+### U-8: Recommendation Engine ✅
+- Similar Channels based on utility metrics
+- Similarity scoring: 35% utility + 25% ER + 15% growth + 15% stability + 10% size
 
-Similarity scoring weights:
+### U-9: Lifecycle Transitions ✅ (NEW - 2026-02-21)
+Tracks lifecycle stage changes over time.
+
+**Impact Score Formula:**
 ```
-similarity =
-  0.35 * utilityDistance +
-  0.25 * engagementDistance +
-  0.15 * growthDistance +
-  0.15 * stabilityDistance +
-  0.10 * sizeDistance +
-  8 * lifecycleDistance
+impact = 0.45 * ΔUtility + 0.35 * ΔAcceleration + 0.20 * (ΔER * 100) - 0.30 * (ΔFraud * 100)
 ```
 
-Filters:
-- Same category (preferred)
-- fraudRisk < 0.5
-- Lifecycle proximity bonus
+**Transition Types:**
+| From | To | Signal |
+|------|----|--------|
+| EMERGING → EXPANDING | Strong growth signal |
+| EXPANDING → MATURE | Confirmed growth |
+| MATURE → SATURATED | Caution |
+| ANY → DECLINING | Risk |
 
-Diversity: избегает показ 6 одинаковых lifecycle
+### U-10: Signal Engine ✅ (NEW - 2026-02-21)
+Actionable intelligence from utility, rotation, lifecycle.
+
+**Signal Types:**
+| Type | Description | Scoring |
+|------|-------------|---------|
+| SUBSCRIBE_CANDIDATE | Good channels to follow | 45% utility + 25% ER + 20% acc + 10% fraud |
+| RISING_UTILITY | Utility + acceleration increase | 50% utility + 35% acc + 15% fraud |
+| LIFECYCLE_PROMOTION | Stage upgrades | 50% impact + 30% Δacc + 20% fraud |
+| QUALITY_ALERT | Risk signals | 40% fraud + 30% declining + 30% decel |
+
+**Severity Levels:**
+- HIGH (score >= 80): Immediate attention
+- MED (score 60-79): Monitor closely
+- LOW (score < 60): Background signal
 
 ---
 
@@ -58,27 +73,21 @@ Diversity: избегает показ 6 одинаковых lifecycle
 ### Utility
 ```
 GET /api/telegram-intel/intel/list?mode=utility
-GET /api/telegram-intel/utility/explain
-```
-
-### Sector
-```
-GET /api/telegram-intel/sector/overview
-GET /api/telegram-intel/sector/rotation?days=7|14|30
-POST /api/admin/telegram-intel/sector/snapshot
+GET /api/telegram-intel/channel/:username/similar?limit=6
 ```
 
 ### Lifecycle
 ```
 GET /api/telegram-intel/lifecycle
-GET /api/telegram-intel/lifecycle/:username
-GET /api/telegram-intel/lifecycle/stage/:stage
+GET /api/telegram-intel/lifecycle/transitions?days=7&filter=EMERGING_TO_EXPANDING
+POST /api/admin/telegram-intel/lifecycle/transitions/run?days=7
 ```
 
-### Recommendations (U-8 NEW)
+### Signals (U-10)
 ```
-GET /api/telegram-intel/channel/:username/similar?limit=6
-GET /api/telegram-intel/health
+GET /api/telegram-intel/signals?days=7&type=SUBSCRIBE_CANDIDATE&severity=HIGH
+GET /api/telegram-intel/signals/:id
+POST /api/admin/telegram-intel/signals/run?days=7
 ```
 
 ---
@@ -87,26 +96,12 @@ GET /api/telegram-intel/health
 
 | Route | Description |
 |-------|-------------|
-| `/telegram` | Utility Leaderboard + Lifecycle |
+| `/telegram` | Utility Leaderboard |
 | `/telegram/sectors` | Sector Heatmap |
-| `/telegram/rotation` | Sector Rotation Tracker |
-| `/telegram/alerts` | Alerts + Bot Connect |
-| `/telegram/watchlist` | User's watchlist |
-| `/telegram/:username` | Channel detail + Similar Channels (U-8) |
-
----
-
-## Components
-
-### SimilarChannelsPanel (U-8)
-Location: `/app/frontend/src/components/telegram/SimilarChannelsPanel.jsx`
-
-Features:
-- Grid of 6 similar channel cards
-- Category + Lifecycle badges
-- Metrics: Utility, Growth, ER, Fraud
-- Similarity reasons
-- Links to channel detail pages
+| `/telegram/rotation` | Sector Rotation |
+| `/telegram/transitions` | Lifecycle Transitions (U-9) |
+| `/telegram/signals` | Actionable Signals (U-10) |
+| `/telegram/:username` | Channel Detail + Similar |
 
 ---
 
@@ -121,22 +116,23 @@ Features:
 - [x] U-6: Sector Rotation
 - [x] U-7: Channel Lifecycle
 - [x] U-8: Recommendation Engine (2026-02-21)
+- [x] U-9: Lifecycle Transitions (2026-02-21)
+- [x] U-10: Signal Engine (2026-02-21)
 - [x] PHASE 6: Bot Delivery
 
 ---
 
 ## Next Steps (P1)
 
-### U-9: Lifecycle Transitions (Weekly)
-- Track transitions: EMERGING → EXPANDING → MATURE → SATURATED → DECLINING
-- Weekly alerts when channels change lifecycle
-- Historical lifecycle data
+### U-11: Delivery Layer
+- Push signals to Telegram via bot
+- In-app notifications
+- Personalized thresholds for watchlist
 
-### Channel Page Redesign
-- Utility-first header ✅
-- Lifecycle badge prominent ✅
-- Similar Channels section ✅ (U-8)
-- Sector comparison (pending)
+### Channel Page Enhancements
+- Signal badges on channel cards
+- Recent transitions indicator
+- Alert subscription button
 
 ---
 
@@ -149,10 +145,10 @@ Features:
 
 ### Mock Mode
 - TG_UTILITY_MOCK=1 enables mock data adapter
-- 5 test channels: alpha_crypto, defi_news, whale_alerts, nft_insider, shitcoin_casino
+- 5 test channels with realistic transitions and signals
 
 ---
 
 **Last Updated:** 2026-02-21
-**Version:** 12.0.0
-**Status:** U-8 Recommendation Engine Complete ✅
+**Version:** 13.0.0
+**Status:** U-9 + U-10 Complete ✅
