@@ -112,6 +112,9 @@ export default function TelegramChannelPage() {
         </div>
       )}
 
+      {/* Similar Channels (U-8) */}
+      <SimilarChannelsPanel username={username} />
+
       {/* Network Evidence */}
       {evidence?.items?.length > 0 && <NetworkEvidenceSection data={evidence} />}
 
