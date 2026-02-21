@@ -35,15 +35,16 @@ def start_node_backend():
     global node_process
     env = os.environ.copy()
     env['PORT'] = '8002'
+    # Use lightweight JS server to avoid TypeScript compilation OOM
     node_process = subprocess.Popen(
-        ['npx', 'tsx', 'src/server-telegram.ts'],
+        ['node', 'src/telegram-lite.mjs'],
         cwd=ROOT_DIR,
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
-    logging.info(f"[PROXY] Started Node.js backend on port 8002, PID: {node_process.pid}")
-    time.sleep(3)  # Wait for Node.js to start
+    logging.info(f"[PROXY] Started Node.js Lite backend on port 8002, PID: {node_process.pid}")
+    time.sleep(2)  # Wait for Node.js to start
 
 def stop_node_backend():
     global node_process
