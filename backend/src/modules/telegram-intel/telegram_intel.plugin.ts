@@ -249,6 +249,14 @@ export const telegramIntelPlugin: FastifyPluginAsync = async (fastify) => {
   
   await fastify.register((await import('./recommendations/recommendation.routes.js')).recommendationRoutes);
 
+  // ==================== Lifecycle Transitions (U-9) ====================
+  
+  await fastify.register((await import('./lifecycle-transitions/transitions.routes.js')).lifecycleTransitionsRoutes);
+
+  // ==================== Signal Engine (U-10) ====================
+  
+  await fastify.register((await import('./signals/signals.routes.js')).signalsRoutes);
+
   // ==================== Shutdown ====================
 
   fastify.addHook('onClose', async () => {
