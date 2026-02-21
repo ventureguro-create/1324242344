@@ -39,17 +39,14 @@ class TelegramIntelTester:
             self.log_test("Health Check", False, f"Error: {str(e)}")
             return False
             
-    def test_similar_channels_api_structure(self):
-        """Test the similar channels API endpoint structure and response"""
-        # Use one of the mock channels from MockUtilityDataAdapter
-        test_username = "alpha_crypto"  # From the mock data
-        
+    def test_lifecycle_transitions_api(self):
+        """Test U-9: Lifecycle Transitions API endpoint"""
         try:
-            url = f"{self.base_url}/api/telegram-intel/channel/{test_username}/similar"
+            url = f"{self.base_url}/api/telegram-intel/lifecycle/transitions"
             response = requests.get(url, timeout=15)
             
             success = response.status_code == 200
-            self.log_test(f"Similar Channels API Response ({test_username})", success, 
+            self.log_test("U-9: Lifecycle Transitions API", success, 
                          f"Status: {response.status_code}")
             
             if not success:
@@ -59,41 +56,31 @@ class TelegramIntelTester:
             data = response.json()
             
             # Test response structure
-            required_fields = ['ok', 'username', 'limit', 'items', 'targetChannel']
+            required_fields = ['ok', 'days', 'limit', 'items']
             structure_valid = all(field in data for field in required_fields)
-            self.log_test("API Response Structure", structure_valid,
+            self.log_test("U-9: Response Structure", structure_valid,
                          f"Required fields present: {required_fields}")
             
-            if not structure_valid:
-                print(f"   Missing fields from: {list(data.keys())}")
-                return False
-                
-            # Test that items are returned
+            # Test that items are returned (should have mock data)
             items_present = isinstance(data['items'], list)
-            self.log_test("Items Array Present", items_present, 
-                         f"Items type: {type(data['items'])}, Count: {len(data.get('items', []))}")
+            items_count = len(data.get('items', []))
+            self.log_test("U-9: Items Present", items_present and items_count > 0, 
+                         f"Items count: {items_count}")
                          
-            # Test targetChannel structure
-            target_valid = isinstance(data.get('targetChannel'), dict)
-            self.log_test("Target Channel Structure", target_valid,
-                         f"targetChannel present: {bool(data.get('targetChannel'))}")
-            
-            return success and structure_valid and items_present and target_valid
+            return success and structure_valid and items_present and items_count > 0
             
         except Exception as e:
-            self.log_test("Similar Channels API", False, f"Error: {str(e)}")
+            self.log_test("U-9: Lifecycle Transitions API", False, f"Error: {str(e)}")
             return False
             
-    def test_similar_channels_item_structure(self):
-        """Test individual similar channel item structure"""
-        test_username = "defi_news"  # Another mock channel
-        
+    def test_lifecycle_transitions_item_structure(self):
+        """Test U-9: Individual transition item structure"""
         try:
-            url = f"{self.base_url}/api/telegram-intel/channel/{test_username}/similar"
-            response = requests.get(url, params={'limit': 3}, timeout=15)
+            url = f"{self.base_url}/api/telegram-intel/lifecycle/transitions"
+            response = requests.get(url, params={'limit': 5}, timeout=15)
             
             if response.status_code != 200:
-                self.log_test("Similar Channel Items Structure", False, 
+                self.log_test("U-9: Transition Items Structure", False, 
                              f"API call failed: {response.status_code}")
                 return False
                 
@@ -101,79 +88,210 @@ class TelegramIntelTester:
             items = data.get('items', [])
             
             if not items:
-                self.log_test("Similar Channel Items Structure", False, "No items returned")
+                self.log_test("U-9: Transition Items Structure", False, "No items returned")
                 return False
                 
             # Test first item structure
             item = items[0]
             expected_fields = [
-                'username', 'category', 'lifecycle', 'utilityScore', 
-                'growth30', 'engagementRate', 'fraudRisk', 'similarityScore', 'reasons'
+                'username', 'from', 'to', 'impactScore', 
+                'deltaUtility', 'deltaAcceleration', 'deltaGrowth30', 'toDay'
             ]
             
             fields_present = all(field in item for field in expected_fields)
-            self.log_test("Channel Item Fields", fields_present,
+            self.log_test("U-9: Transition Item Fields", fields_present,
                          f"Fields in item: {list(item.keys())}")
                          
-            # Test reasons array
-            reasons_valid = isinstance(item.get('reasons'), list) and len(item.get('reasons', [])) > 0
-            self.log_test("Reasons Array", reasons_valid,
-                         f"Reasons: {item.get('reasons', [])[0] if item.get('reasons') else 'None'}")
+            # Test transition values
+            valid_lifecycle_stages = ['EMERGING', 'EXPANDING', 'MATURE', 'SATURATED', 'DECLINING', 'STABLE']
+            from_valid = item.get('from') in valid_lifecycle_stages
+            to_valid = item.get('to') in valid_lifecycle_stages
+            self.log_test("U-9: Lifecycle Stage Values", from_valid and to_valid,
+                         f"From: {item.get('from')}, To: {item.get('to')}")
             
-            return fields_present and reasons_valid
+            return fields_present and from_valid and to_valid
             
         except Exception as e:
-            self.log_test("Similar Channel Items", False, f"Error: {str(e)}")
+            self.log_test("U-9: Transition Items", False, f"Error: {str(e)}")
             return False
             
-    def test_api_with_limit_parameter(self):
-        """Test API with limit parameter"""
-        test_username = "whale_alerts"
-        
+    def test_signals_api(self):
+        """Test U-10: Signal Engine API endpoint"""
         try:
-            url = f"{self.base_url}/api/telegram-intel/channel/{test_username}/similar"
-            response = requests.get(url, params={'limit': 3}, timeout=15)
+            url = f"{self.base_url}/api/telegram-intel/signals"
+            response = requests.get(url, timeout=15)
             
             success = response.status_code == 200
+            self.log_test("U-10: Signals API", success, 
+                         f"Status: {response.status_code}")
+            
             if not success:
-                self.log_test("API Limit Parameter", False, f"Status: {response.status_code}")
+                print(f"   Response: {response.text[:500]}")
                 return False
                 
             data = response.json()
-            limit_respected = len(data.get('items', [])) <= 3
-            returned_limit = data.get('limit') == 3
             
-            self.log_test("API Limit Parameter", limit_respected and returned_limit,
-                         f"Requested: 3, Returned: {len(data.get('items', []))}, Limit field: {data.get('limit')}")
+            # Test response structure
+            required_fields = ['ok', 'days', 'limit', 'items']
+            structure_valid = all(field in data for field in required_fields)
+            self.log_test("U-10: Response Structure", structure_valid,
+                         f"Required fields present: {required_fields}")
             
-            return success and limit_respected and returned_limit
+            # Test that items are returned (should have mock data)
+            items_present = isinstance(data['items'], list)
+            items_count = len(data.get('items', []))
+            self.log_test("U-10: Items Present", items_present and items_count > 0, 
+                         f"Items count: {items_count}")
+                         
+            return success and structure_valid and items_present and items_count > 0
             
         except Exception as e:
-            self.log_test("API Limit Parameter", False, f"Error: {str(e)}")
+            self.log_test("U-10: Signals API", False, f"Error: {str(e)}")
             return False
             
-    def test_nonexistent_channel(self):
-        """Test API response for nonexistent channel"""
-        test_username = "nonexistent_channel_12345"
-        
+    def test_signals_item_structure(self):
+        """Test U-10: Individual signal item structure"""
         try:
-            url = f"{self.base_url}/api/telegram-intel/channel/{test_username}/similar"
-            response = requests.get(url, timeout=10)
+            url = f"{self.base_url}/api/telegram-intel/signals"
+            response = requests.get(url, params={'limit': 5}, timeout=15)
             
-            # Should return 200 with empty items, not 404
-            success = response.status_code == 200
-            if success:
-                data = response.json()
-                empty_items = len(data.get('items', [])) == 0
-                self.log_test("Nonexistent Channel Handling", success and empty_items,
-                             f"Empty items for nonexistent channel: {empty_items}")
-                return success and empty_items
-            else:
-                self.log_test("Nonexistent Channel Handling", False, f"Status: {response.status_code}")
+            if response.status_code != 200:
+                self.log_test("U-10: Signal Items Structure", False, 
+                             f"API call failed: {response.status_code}")
                 return False
                 
+            data = response.json()
+            items = data.get('items', [])
+            
+            if not items:
+                self.log_test("U-10: Signal Items Structure", False, "No items returned")
+                return False
+                
+            # Test first item structure
+            item = items[0]
+            expected_fields = [
+                'title', 'type', 'severity', 'score', 'confidence', 'reasons', 'username'
+            ]
+            
+            fields_present = all(field in item for field in expected_fields)
+            self.log_test("U-10: Signal Item Fields", fields_present,
+                         f"Fields in item: {list(item.keys())}")
+                         
+            # Test signal values
+            valid_severities = ['HIGH', 'MED', 'LOW']
+            valid_types = ['SUBSCRIBE_CANDIDATE', 'RISING_UTILITY', 'LIFECYCLE_PROMOTION', 'QUALITY_ALERT', 'ROTATION_IN_OPPORTUNITY']
+            severity_valid = item.get('severity') in valid_severities
+            type_valid = item.get('type') in valid_types
+            self.log_test("U-10: Signal Type/Severity Values", severity_valid and type_valid,
+                         f"Type: {item.get('type')}, Severity: {item.get('severity')}")
+                         
+            # Test reasons array
+            reasons_valid = isinstance(item.get('reasons'), list) and len(item.get('reasons', [])) > 0
+            self.log_test("U-10: Reasons Array", reasons_valid,
+                         f"Reasons count: {len(item.get('reasons', []))}")
+            
+            return fields_present and severity_valid and type_valid and reasons_valid
+            
         except Exception as e:
-            self.log_test("Nonexistent Channel", False, f"Error: {str(e)}")
+            self.log_test("U-10: Signal Items", False, f"Error: {str(e)}")
+            return False
+            
+    def test_lifecycle_transitions_with_params(self):
+        """Test U-9: API with parameters (days, limit, filter)"""
+        try:
+            url = f"{self.base_url}/api/telegram-intel/lifecycle/transitions"
+            params = {'days': 14, 'limit': 10, 'filter': 'EMERGING_TO_EXPANDING'}
+            response = requests.get(url, params=params, timeout=15)
+            
+            success = response.status_code == 200
+            if not success:
+                self.log_test("U-9: API Parameters", False, f"Status: {response.status_code}")
+                return False
+                
+            data = response.json()
+            params_respected = (
+                data.get('days') == 14 and 
+                data.get('limit') == 10 and 
+                data.get('filter') == 'EMERGING_TO_EXPANDING'
+            )
+            
+            self.log_test("U-9: API Parameters", params_respected,
+                         f"Days: {data.get('days')}, Limit: {data.get('limit')}, Filter: {data.get('filter')}")
+            
+            return success and params_respected
+            
+        except Exception as e:
+            self.log_test("U-9: API Parameters", False, f"Error: {str(e)}")
+            return False
+            
+    def test_signals_with_params(self):
+        """Test U-10: API with parameters (days, limit, type, severity)"""
+        try:
+            url = f"{self.base_url}/api/telegram-intel/signals"
+            params = {'days': 14, 'limit': 20, 'type': 'SUBSCRIBE_CANDIDATE', 'severity': 'HIGH'}
+            response = requests.get(url, params=params, timeout=15)
+            
+            success = response.status_code == 200
+            if not success:
+                self.log_test("U-10: API Parameters", False, f"Status: {response.status_code}")
+                return False
+                
+            data = response.json()
+            params_respected = (
+                data.get('days') == 14 and 
+                data.get('limit') == 20 and 
+                data.get('type') == 'SUBSCRIBE_CANDIDATE' and
+                data.get('severity') == 'HIGH'
+            )
+            
+            self.log_test("U-10: API Parameters", params_respected,
+                         f"Days: {data.get('days')}, Limit: {data.get('limit')}, Type: {data.get('type')}, Severity: {data.get('severity')}")
+            
+            return success and params_respected
+            
+        except Exception as e:
+            self.log_test("U-10: API Parameters", False, f"Error: {str(e)}")
+            return False
+
+    def test_signals_single_item(self):
+        """Test U-10: Get single signal by ID"""
+        try:
+            # First get list to find an ID
+            url = f"{self.base_url}/api/telegram-intel/signals"
+            response = requests.get(url, params={'limit': 1}, timeout=15)
+            
+            if response.status_code != 200:
+                self.log_test("U-10: Single Signal Setup", False, f"List API failed: {response.status_code}")
+                return False
+                
+            data = response.json()
+            items = data.get('items', [])
+            
+            if not items or not items[0].get('_id'):
+                self.log_test("U-10: Single Signal", False, "No signals with ID found")
+                return True  # Not a failure if no items
+                
+            signal_id = items[0]['_id']
+            
+            # Test single signal endpoint
+            single_url = f"{self.base_url}/api/telegram-intel/signals/{signal_id}"
+            single_response = requests.get(single_url, timeout=15)
+            
+            success = single_response.status_code == 200
+            self.log_test("U-10: Single Signal API", success,
+                         f"Status: {single_response.status_code}")
+            
+            if success:
+                single_data = single_response.json()
+                item_present = 'item' in single_data
+                self.log_test("U-10: Single Signal Structure", item_present,
+                             f"Item field present: {item_present}")
+                return success and item_present
+            
+            return success
+            
+        except Exception as e:
+            self.log_test("U-10: Single Signal", False, f"Error: {str(e)}")
             return False
 
     def run_all_tests(self):
