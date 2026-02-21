@@ -750,8 +750,18 @@ function CompareModal({ channel1, onClose }) {
   );
 }
 
-function CompareColumn({ channel }) {
+function CompareColumn({ channel, compareWith, isLeft }) {
   const { profile, topCards, aiSummary, activityOverview, audienceSnapshot, channelSnapshot, healthSafety, productOverview } = channel;
+  
+  // Calculate diff
+  const getDiff = (val1, val2) => {
+    if (!compareWith || !val2 || val1 === val2) return null;
+    const diff = ((val1 - val2) / val2 * 100);
+    const formatted = diff > 0 ? `+${diff.toFixed(1)}%` : `${diff.toFixed(1)}%`;
+    return { value: formatted, positive: diff > 0 };
+  };
+  
+  const compareTo = compareWith?.topCards;
   
   return (
     <div className="space-y-6">
