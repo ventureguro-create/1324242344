@@ -254,6 +254,9 @@ export default function LeaderboardTable({ items = [], loading = false }) {
                     <span className="font-semibold text-gray-900">{row.utilityScore}</span>
                   </td>
                   <td className="px-3 py-3 text-center">
+                    <LifecycleBadge lifecycle={getLifecycleStage(row)} />
+                  </td>
+                  <td className="px-3 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
                       <PercentCell value={row.growth30} />
                       <GrowthBadge growth={row.growth30} />
@@ -263,12 +266,6 @@ export default function LeaderboardTable({ items = [], loading = false }) {
                     <span className="text-sm font-medium text-gray-700">
                       {(row.engagementRate * 100).toFixed(1)}%
                     </span>
-                  </td>
-                  <td className="px-3 py-3 text-center">
-                    <StabilityCell value={row.stability} />
-                  </td>
-                  <td className="px-3 py-3 text-center">
-                    <OriginalityCell forwardRatio={row.forwardRatio} />
                   </td>
                   <td className="px-3 py-3 text-center">
                     <FraudCell value={row.fraudRisk} />
