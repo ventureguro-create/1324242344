@@ -245,6 +245,10 @@ export const telegramIntelPlugin: FastifyPluginAsync = async (fastify) => {
   
   await fastify.register((await import('./delivery/bot.routes.js')).botRoutes);
 
+  // ==================== Recommendations (U-8) ====================
+  
+  await fastify.register((await import('./recommendations/recommendation.routes.js')).recommendationRoutes);
+
   // ==================== Shutdown ====================
 
   fastify.addHook('onClose', async () => {
