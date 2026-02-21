@@ -1,27 +1,22 @@
 /**
- * Telegram Channel Overview Page (UI-FREEZE-1)
- * Exact match to Figma reference - Detail page layout
+ * Telegram Channel Overview Page (Production)
+ * Connected to real backend API
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
   ExternalLink, 
   GitCompare,
   Eye,
-  MessageSquare,
-  Users,
-  Activity,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  Shield,
   Star,
   Heart,
   MessageCircle,
-  Share2,
-  Clock
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
+
+const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
 
 // Mock channel data matching Figma
 const MOCK_CHANNEL = {
