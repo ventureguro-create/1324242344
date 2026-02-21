@@ -8,8 +8,7 @@ import {
   Search, 
   Filter, 
   Star, 
-  ThumbsUp, 
-  Flag, 
+  ThumbsUp,
   ChevronLeft, 
   ChevronRight,
   RefreshCw
