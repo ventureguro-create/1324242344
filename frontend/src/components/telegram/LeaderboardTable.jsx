@@ -99,6 +99,27 @@ function GrowthBadge({ growth }) {
   return null;
 }
 
+// Compute lifecycle stage from metrics (mirrors backend logic)
+function getLifecycleStage(row) {
+  const growth30 = row.growth30 || 0;
+  const growth7 = row.growth7 || 0;
+  const utilityScore = row.utilityScore || 0;
+  const stability = row.stability || 0;
+  
+  // Compute acceleration
+  const expectedWeekly = growth30 / 4;
+  const acceleration = growth7 - expectedWeekly;
+  
+  // Classification rules (same as backend)
+  if (growth30 > 15 && acceleration > 3) return 'EXPANDING';
+  if (acceleration > 5 && utilityScore < 60) return 'EMERGING';
+  if (growth30 >= -3 && growth30 <= 5 && utilityScore > 70 && stability > 0.6) return 'MATURE';
+  if (growth30 < 3 && acceleration < -2 && utilityScore > 50) return 'SATURATED';
+  if (growth30 < -5 || (growth30 < -3 && acceleration < -3)) return 'DECLINING';
+  
+  return 'STABLE';
+}
+
 function ScoreCell({ value, color = 'text-gray-900' }) {
   const num = Number(value ?? 0);
   return <span className={`font-medium ${color}`}>{num.toFixed(1)}</span>;
