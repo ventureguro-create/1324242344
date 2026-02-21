@@ -178,6 +178,10 @@ const TelegramWatchlistPage = lazy(() => import("./pages/TelegramWatchlistPage")
 const TelegramSectorsPage = lazy(() => import("./pages/TelegramSectorsPage"));
 // U-6: Rotation Page
 const TelegramRotationPage = lazy(() => import("./pages/TelegramRotationPage"));
+// U-9: Lifecycle Transitions Page
+const TelegramTransitionsPage = lazy(() => import("./pages/TelegramTransitionsPage"));
+// U-10: Signals Page
+const TelegramSignalsPage = lazy(() => import("./pages/TelegramSignalsPage"));
 
 // Connections - Influence Scoring
 const ConnectionsPage = lazy(() => import("./pages/ConnectionsPage"));
