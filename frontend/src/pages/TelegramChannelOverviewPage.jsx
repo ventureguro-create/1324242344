@@ -18,115 +18,98 @@ import {
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
 
-// Mock channel data matching Figma
-const MOCK_CHANNEL = {
-  profile: {
-    username: 'fomohub',
-    title: 'FOMO Hub',
-    type: 'Channel',
-    avatarUrl: null,
-    avatarColor: '#6366F1',
-    description: "FOMO's research-driven Discord hub for on-chain analytics, narrative tracking and TGE insights. Structured channels for alerts, dashb...",
-    telegramUrl: 'https://t.me/fomohub',
-    updatedAt: '30 min ago',
-  },
-  topCards: {
-    subscribers: 18420,
-    subscribersChange: '+21 last 7D',
-    viewsPerPost: 9300,
-    viewsSubtitle: 'View rate 50%',
-    messagesPerDay: '3-5',
-    messagesSubtitle: 'Incl. posts & pinned threads',
-    activity: 'High',
-    activitySubtitle: 'Views, replies & forwards',
-  },
-  aiSummary: {
-    text: "FOMO Hub sits in the upper tier of research-driven Telegram channels. Activity is consistent, with high view-rate on posts and steady attention around market updates, liquidity flows and L2 ecosystem movements.\n\nMost engagement is driven by a mix of active readers and professional traders; low spam and stable forward-ratio suggest real organic interest rather than automated boosting. Posting frequency is ...",
-    spamLevel: 'Low',
-    signalNoise: 8.6,
-    contentExposure: ['Trading', 'On-Chain', 'General Topics'],
-  },
-  activityOverview: {
-    postsPerDay: '3-5',
-    viewRateStability: 'High',
-    viewRateValue: 85,
-    forwardVolatility: 'Moderate',
-    forwardValue: 55,
-  },
-  audienceSnapshot: {
-    directFollowers: 72,
-    crossPost: 18,
-    searchHashtags: 6,
-    externalShares: 4,
-  },
-  productOverview: {
-    type: 'Courses',
-    rating: 4.4,
-    tags: ['Courses', 'Private community', 'Signals & research'],
-    feedback: 'Users highlight clear market insights, accurate early alerts, and strong educational value. Criticism mostly concerns delayed updates during high-volatility periods and limited beginner-friendly material.',
-    trustIndicators: [
-      'High retention of paid members',
-      'Stable positive vs negative sentiment',
-      'Low spam & minimal bot-like reviews',
-      'Content reshared by reputable analysts',
-    ],
-    refundRate: '~3% over 30 days',
-  },
-  channelSnapshot: {
-    onlineNow: 984,
-    peak24h: 1742,
-    activeSenders: 312,
-    retention7d: 73,
-  },
-  healthSafety: {
-    spamLevel: { label: 'Low', value: 20 },
-    raidRisk: { label: 'Medium', value: 55 },
-    modCoverage: { label: 'Good', value: 85 },
-    note: 'Most flagged content is filtered by bots before reaching public channels. Short-term spikes in invites from newly created accounts are throttled automatically.',
-  },
-  relatedChannels: [
-    { title: 'L2 Liquidity Maps', activity: 'Medium' },
-    { title: 'Bridge Risk Monitor', activity: 'High' },
-    { title: 'Rotations Radar', activity: 'High' },
-  ],
-  timeline: [
-    { time: '00:00', views: 100, reactions: 20, joins: 0 },
-    { time: '04:00', views: 150, reactions: 25, joins: 0 },
-    { time: '08:00', views: 800, reactions: 30, joins: 0 },
-    { time: '12:00', views: 1890, reactions: 43, joins: 0 },
-    { time: '16:00', views: 1200, reactions: 35, joins: 0 },
-    { time: '20:00', views: 900, reactions: 28, joins: 0 },
-    { time: '24:00', views: 500, reactions: 22, joins: 0 },
-  ],
-  recentPosts: [
-    {
-      id: 1,
-      text: 'New DeFi platform just launched and it\'s already drawing massive attention. Users are speculating an upcoming airdrop based on early interactions. Clean interface, responsive UI, and non-custodial features – could become a serious contender in Web3 infrastructure...',
-      likes: 362,
-      comments: 164,
-      views: 122200,
-      date: 'July 02, 2025 4:12 pm',
-      images: ['/placeholder1.jpg', '/placeholder2.jpg'],
-    },
-    {
-      id: 2,
-      text: 'New DeFi platform just launched and it\'s already drawing massive attention. Users are speculating an upcoming airdrop based on early interactions. Clean interface, responsive UI, and non-custodial features – could become a serious contender in Web3 infrastructure...',
-      likes: 362,
-      comments: 164,
-      views: 122200,
-      date: 'July 02, 2025 4:12 pm',
-      hasLink: { title: 'Liquids Program', url: '3vkpy5...8x3h' },
-    },
-    {
-      id: 3,
-      text: 'Alpha alert 🚨 – A stealth airdrop campaign might be in motion. A newly released dApp is letting users interact with cross-chain swaps and gasless transactions. Many signs point toward future rewards for early onchain users. Stay sharp.',
-      likes: 362,
-      comments: 164,
-      views: 122200,
-      date: 'July 02, 2025 4:12 pm',
-    },
-  ],
-};
+export default function TelegramChannelOverviewPage() {
+  const { username } = useParams();
+  const [channel, setChannel] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [timeRange, setTimeRange] = useState('24H');
+  const [showCompare, setShowCompare] = useState(false);
+
+  // Fetch channel data from backend
+  const fetchChannel = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/telegram-intel/channel/${username}/overview`);
+      
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new Error('Channel not found');
+        }
+        throw new Error(`API error: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      
+      if (!data.ok) {
+        throw new Error(data.message || 'Failed to load channel');
+      }
+      
+      setChannel(data);
+    } catch (err) {
+      console.error('[ChannelOverview] Fetch error:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [username]);
+
+  useEffect(() => {
+    if (username) {
+      fetchChannel();
+    }
+  }, [username, fetchChannel]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1400px] mx-auto px-6 py-6">
+          <Link to="/telegram" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Entities
+          </Link>
+          <div className="bg-white rounded-xl border border-red-200 p-8 text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button 
+              onClick={fetchChannel}
+              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No data
+  if (!channel) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-[1400px] mx-auto px-6 py-6">
+          <Link to="/telegram" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Entities
+          </Link>
+          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+            Channel not found
+          </div>
+        </div>
+      </div>
+    );
+  }
 
 export default function TelegramChannelOverviewPage() {
   const { username } = useParams();
