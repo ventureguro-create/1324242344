@@ -725,6 +725,10 @@ class TelegramIntelUtilityAPITester:
         self.test_intel_list_mode_utility()
         self.test_sector_overview_api()
         
+        # Test NEW U-6 and U-7 Features  
+        self.test_sector_rotation_api()
+        self.test_lifecycle_api()
+        
         # Test Existing Mode Compatibility
         self.test_intel_list_mode_intel()
         self.test_intel_list_mode_momentum()
