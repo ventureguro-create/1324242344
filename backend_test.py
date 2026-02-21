@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 
 class TelegramIntelTester:
-    def __init__(self, base_url="https://20f31160-bba4-489a-bca3-9360eb80f264.preview.emergentagent.com"):
+    def __init__(self, base_url="https://channel-metrics-20.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
