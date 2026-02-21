@@ -1,9 +1,9 @@
 /**
- * Telegram Leaderboard Table (U-2 + M-3 UI)
- * Card-based watchlist style with Utility/Intel/Momentum mode support
+ * Telegram Leaderboard Table (U-2 + U-7 + M-3 UI)
+ * Card-based watchlist style with Utility/Intel/Momentum mode support + Lifecycle
  */
 import { Link, useSearchParams } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Minus, Flame, Zap, Snowflake, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Flame, Zap, Snowflake, Info, Sprout, Rocket, Building, Scale, LineChart } from 'lucide-react';
 
 // Utility Tier Badge (A+/A/B/C/D)
 function UtilityTierBadge({ tier }) {
@@ -33,6 +33,26 @@ function TierBadge({ tier }) {
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${colors[tier] || colors.D}`}>
       {tier}
+    </span>
+  );
+}
+
+// Lifecycle Badge (U-7)
+function LifecycleBadge({ lifecycle }) {
+  const config = {
+    EMERGING: { bg: 'bg-teal-50 text-teal-700 border-teal-200', icon: Sprout, label: 'Emerging' },
+    EXPANDING: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: Rocket, label: 'Expanding' },
+    MATURE: { bg: 'bg-slate-50 text-slate-600 border-slate-200', icon: Building, label: 'Mature' },
+    SATURATED: { bg: 'bg-amber-50 text-amber-700 border-amber-200', icon: Scale, label: 'Saturated' },
+    DECLINING: { bg: 'bg-red-50 text-red-600 border-red-200', icon: LineChart, label: 'Declining' },
+    STABLE: { bg: 'bg-gray-50 text-gray-600 border-gray-200', icon: Minus, label: 'Stable' },
+  };
+  const c = config[lifecycle] || config.STABLE;
+  const Icon = c.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border ${c.bg}`} title={lifecycle}>
+      <Icon className="w-3 h-3" />
+      {c.label}
     </span>
   );
 }
