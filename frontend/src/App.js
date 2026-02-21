@@ -182,6 +182,9 @@ const TelegramRotationPage = lazy(() => import("./pages/TelegramRotationPage"));
 const TelegramTransitionsPage = lazy(() => import("./pages/TelegramTransitionsPage"));
 // U-10: Signals Page
 const TelegramSignalsPage = lazy(() => import("./pages/TelegramSignalsPage"));
+// UI-FREEZE-1: New Reference Design Pages
+const TelegramEntitiesPage = lazy(() => import("./pages/TelegramEntitiesPage"));
+const TelegramChannelOverviewPage = lazy(() => import("./pages/TelegramChannelOverviewPage"));
 
 // Connections - Influence Scoring
 const ConnectionsPage = lazy(() => import("./pages/ConnectionsPage"));
