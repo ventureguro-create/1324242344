@@ -11,6 +11,20 @@ export const recommendationRoutes: FastifyPluginAsync = async (fastify) => {
   const service = new RecommendationService();
 
   /**
+   * GET /api/telegram-intel/health
+   * Health check for telegram-intel module
+   */
+  fastify.get('/api/telegram-intel/health', async () => {
+    return {
+      ok: true,
+      module: 'telegram-intel',
+      version: '1.0.0',
+      features: ['utility', 'lifecycle', 'sector', 'recommendations'],
+      timestamp: new Date().toISOString(),
+    };
+  });
+
+  /**
    * GET /api/telegram-intel/channel/:username/similar
    * 
    * Get similar channels based on utility metrics
