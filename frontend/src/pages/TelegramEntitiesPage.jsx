@@ -1,9 +1,9 @@
 /**
- * Telegram Entities Overview Page (UI-FREEZE-1)
- * Exact match to Figma reference design
+ * Telegram Entities Overview Page (Production)
+ * Connected to real backend with URL-driven filters
  */
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { 
   Search, 
   Filter, 
@@ -11,210 +11,300 @@ import {
   ThumbsUp,
   ChevronLeft, 
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
-import * as telegramApi from '../api/telegramIntel.api';
+import TelegramFilterDrawer from '../components/telegram/TelegramFilterDrawer';
 
-// Mock data matching Figma exactly
-const MOCK_ENTITIES = [
-  { username: 'tradingview', title: 'TradingView', type: 'Channel', members: 128000, avgReach: 128000, growth7: 3.8, activity: 'High', redFlags: 0, fomoScore: 94, engagement: 654, avatarColor: '#1976D2' },
-  { username: 'cinderpoint_ventures', title: 'CinderPoint Ventures', type: 'Group', members: 42000, avgReach: 42000, growth7: 2.2, activity: 'Medium', redFlags: 2, fomoScore: 78, engagement: 98, avatarColor: '#E53935' },
-  { username: 'elara_kim', title: 'Elara Kim', type: 'Group', members: 9300, avgReach: 9300, growth7: 1.4, activity: 'Low', redFlags: 1, fomoScore: 94, engagement: 1200, avatarColor: '#8E24AA' },
-  { username: 'metaforge_dao', title: 'MetaForge DAO', type: 'Channel', members: 23500, avgReach: 23500, growth7: 4.1, activity: 'Medium', redFlags: 0, fomoScore: 100, engagement: 1400, avatarColor: '#43A047' },
-  { username: 'delta_arc_fund', title: 'Delta Arc Fund', type: 'Channel', members: 12000, avgReach: 12000, growth7: 2.9, activity: 'High', redFlags: 0, fomoScore: 89, engagement: 976, avatarColor: '#1E88E5' },
-  { username: 'ivan_ghostnode', title: 'Ivan "GhostNode" Sav...', type: 'Channel', members: 11000, avgReach: 11000, growth7: -1.1, activity: 'Low', redFlags: 4, fomoScore: 76, engagement: 29, avatarColor: '#546E7A' },
-  { username: 'echomint', title: 'EchoMint', type: 'Channel', members: 25000, avgReach: 25000, growth7: 2.5, activity: 'Medium', redFlags: 1, fomoScore: 86, engagement: 46, avatarColor: '#00897B' },
-  { username: 'arcanapay', title: 'ArcanaPay', type: 'Group', members: 3300, avgReach: 3300, growth7: 3.4, activity: 'Low', redFlags: 0, fomoScore: 79, engagement: 54, avatarColor: '#F4511E' },
-  { username: 'helixnine_capital', title: 'HelixNine Capital', type: 'Group', members: 9000, avgReach: 9000, growth7: 9.0, activity: 'Medium', redFlags: 6, fomoScore: 54, engagement: null, avatarColor: '#3949AB' },
-  { username: 'tara_voss', title: 'Tara Voss', type: 'Channel', members: 1200, avgReach: 1200, growth7: 4.5, activity: 'High', redFlags: 0, fomoScore: 91, engagement: 273, avatarColor: '#D81B60' },
-];
+const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
 
 export default function TelegramEntitiesPage() {
-  const [entities, setEntities] = useState(MOCK_ENTITIES);
-  const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('fomoScore');
-  const [page, setPage] = useState(1);
-  const [showCompare, setShowCompare] = useState(false);
-  const [compareChannels, setCompareChannels] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
 
-  const stats = {
-    funds: 200,
-    projects: 200,
-    tracked: entities.length,
-    avgScore: 83.1,
-    highGrowth: entities.filter(e => e.growth7 >= 10).length,
-    highRisk: entities.filter(e => e.redFlags >= 3).length,
+  // Build API URL from search params
+  const buildApiUrl = useCallback(() => {
+    const params = new URLSearchParams();
+    
+    // Transfer all search params to API
+    searchParams.forEach((value, key) => {
+      params.set(key, value);
+    });
+    
+    // Ensure defaults
+    if (!params.has('limit')) params.set('limit', '20');
+    if (!params.has('page')) params.set('page', '1');
+    
+    return `${API_BASE}/api/telegram-intel/utility/list?${params.toString()}`;
+  }, [searchParams]);
+
+  // Fetch data
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const url = buildApiUrl();
+      const res = await fetch(url);
+      
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+      
+      const json = await res.json();
+      setData(json);
+    } catch (err) {
+      console.error('[Entities] Fetch error:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [buildApiUrl]);
+
+  // Fetch on mount and when params change
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Handle search submit
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const newParams = new URLSearchParams(searchParams);
+    if (searchInput.trim()) {
+      newParams.set('q', searchInput.trim());
+    } else {
+      newParams.delete('q');
+    }
+    newParams.set('page', '1');
+    setSearchParams(newParams);
   };
 
-  // Filter and sort entities
-  const filteredEntities = entities
-    .filter(e => {
-      if (searchQuery && !e.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (typeFilter !== 'all' && e.type.toLowerCase() !== typeFilter) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'fomoScore') return b.fomoScore - a.fomoScore;
-      if (sortBy === 'growth7') return b.growth7 - a.growth7;
-      if (sortBy === 'members') return b.members - a.members;
-      return 0;
-    });
+  // Handle pagination
+  const goToPage = (page) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('page', String(page));
+    setSearchParams(newParams);
+  };
 
-  const totalPages = Math.ceil(filteredEntities.length / 20);
-  const paginatedEntities = filteredEntities.slice((page - 1) * 20, page * 20);
+  const currentPage = Number(searchParams.get('page')) || 1;
+  const limit = Number(searchParams.get('limit')) || 20;
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total / limit);
+  const items = data?.items || [];
+  const stats = data?.stats || { tracked: 0, avgUtility: 0, highGrowth: 0, highRisk: 0 };
+
+  // Count active filters
+  const activeFilters = Array.from(searchParams.entries()).filter(
+    ([key]) => !['page', 'limit', 'q'].includes(key)
+  ).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto px-6 py-6">
-        {/* Top Stats Bar */}
+        {/* Top Row: Search + Stats */}
         <div className="flex items-center justify-between mb-6">
-          {/* Search */}
-          <div className="relative w-96">
+          {/* Search Form */}
+          <form onSubmit={handleSearch} className="relative w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search for a project, fund or person..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-400"
               data-testid="entity-search"
             />
-          </div>
+          </form>
 
           {/* Stats Cards */}
           <div className="flex items-center gap-6">
-            <div className="text-right">
-              <div className="text-xs text-gray-500">Funds:</div>
-              <div className="text-lg font-semibold text-teal-600">{stats.funds}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-gray-500">Projects:</div>
-              <div className="text-lg font-semibold text-teal-600">{stats.projects}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-gray-500">Funds:</div>
-              <div className="text-lg font-semibold text-teal-600">{stats.funds}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-gray-500">Projects:</div>
-              <div className="text-lg font-semibold text-teal-600">{stats.projects}</div>
-            </div>
+            <StatCard label="Tracked" value={stats.tracked} color="teal" />
+            <StatCard label="Avg Score" value={stats.avgUtility} color="teal" />
+            <StatCard label="High Growth" value={stats.highGrowth} color="emerald" />
+            <StatCard label="High Risk" value={stats.highRisk} color="rose" />
           </div>
         </div>
 
-        {/* Title Row with Icons and Buttons */}
+        {/* Title Row with Filter Button */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-semibold text-gray-900">Entities Overview</h1>
 
-          <div className="flex items-center gap-4">
-            {/* Social Platform Icons */}
-            <div className="flex items-center gap-2">
-              <SocialIcon name="twitter" />
-              <SocialIcon name="discord" />
-              <SocialIcon name="instagram" />
-              <SocialIcon name="linkedin" />
-              <SocialIcon name="tiktok" />
-              <SocialIcon name="youtube" />
+          <div className="flex items-center gap-3">
+            {/* Social Icons - placeholder */}
+            <div className="flex items-center gap-1">
+              {['X', '💬', '📷', '💼', '🎵', '▶️'].map((icon, i) => (
+                <button 
+                  key={i}
+                  className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 text-xs"
+                >
+                  {icon}
+                </button>
+              ))}
             </div>
 
-            {/* Ad Mode Button */}
+            {/* Ad Mode */}
             <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white hover:bg-gray-50">
-              <span className="w-4 h-4 text-gray-500">📊</span>
-              <span>Ad Mode</span>
+              📊 Ad Mode
             </button>
 
             {/* Filter Button */}
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white hover:bg-gray-50">
+            <button 
+              onClick={() => setFilterOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white hover:bg-gray-50 relative"
+              data-testid="filter-button"
+            >
               <Filter className="w-4 h-4 text-gray-500" />
               <span>Filter</span>
+              {activeFilters > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-teal-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {activeFilters}
+                </span>
+              )}
             </button>
           </div>
         </div>
 
-        {/* Entities Table */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" data-testid="entities-table">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Channel/Group
-                </th>
-                <th className="text-left px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="text-right px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Members
-                </th>
-                <th className="text-right px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avg Reach
-                </th>
-                <th className="text-right px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Growth (7D)
-                </th>
-                <th className="text-center px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Activity
-                </th>
-                <th className="text-center px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Red Flags
-                </th>
-                <th className="text-right px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  FOMO Score
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedEntities.map((entity, idx) => (
-                <EntityRow key={entity.username} entity={entity} />
-              ))}
-            </tbody>
-          </table>
+        {/* Loading State */}
+        {loading && (
+          <div className="bg-white rounded-xl border border-gray-200 p-12 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
+          </div>
+        )}
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+        {/* Error State */}
+        {error && !loading && (
+          <div className="bg-white rounded-xl border border-red-200 p-8 text-center">
+            <p className="text-red-600 mb-4">{error}</p>
             <button 
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+              onClick={fetchData}
+              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-500" />
+              Retry
             </button>
-
-            <div className="flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
-                    page === p 
-                      ? 'bg-teal-500 text-white' 
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-              <span className="text-gray-400">...</span>
-              <button className="w-8 h-8 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100">
-                10
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500">
-                Showing {(page - 1) * 20 + 1} – {Math.min(page * 20, filteredEntities.length)} out of {filteredEntities.length}
-              </span>
-              <button 
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-              >
-                <ChevronRight className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
           </div>
-        </div>
+        )}
+
+        {/* Table */}
+        {!loading && !error && (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" data-testid="entities-table">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Channel/Group
+                  </th>
+                  <th className="text-left px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="text-right px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Members
+                  </th>
+                  <th className="text-right px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Avg Reach
+                  </th>
+                  <th className="text-right px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Growth (7D)
+                  </th>
+                  <th className="text-center px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Activity
+                  </th>
+                  <th className="text-center px-4 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Red Flags
+                  </th>
+                  <th className="text-right px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    FOMO Score
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                      No entities found matching your filters.
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((entity) => (
+                    <EntityRow key={entity.username} entity={entity} />
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+                <button 
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-500" />
+                </button>
+
+                <div className="flex items-center gap-2">
+                  {generatePageNumbers(currentPage, totalPages).map((p, i) => (
+                    p === '...' ? (
+                      <span key={`ellipsis-${i}`} className="text-gray-400">...</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => goToPage(p)}
+                        className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                          currentPage === p 
+                            ? 'bg-teal-500 text-white' 
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-500">
+                    Showing {(currentPage - 1) * limit + 1} – {Math.min(currentPage * limit, total)} of {total}
+                  </span>
+                  <button 
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
+                    className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Filter Drawer */}
+      <TelegramFilterDrawer 
+        open={filterOpen} 
+        onClose={() => setFilterOpen(false)} 
+      />
+    </div>
+  );
+}
+
+function StatCard({ label, value, color }) {
+  const colorMap = {
+    teal: 'text-teal-600',
+    emerald: 'text-emerald-600',
+    rose: 'text-rose-600',
+  };
+  
+  return (
+    <div className="text-right">
+      <div className="text-xs text-gray-500">{label}:</div>
+      <div className={`text-lg font-semibold ${colorMap[color] || colorMap.teal}`}>
+        {value}
       </div>
     </div>
   );
@@ -223,7 +313,7 @@ export default function TelegramEntitiesPage() {
 function EntityRow({ entity }) {
   return (
     <tr 
-      className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer"
+      className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors"
       data-testid={`entity-row-${entity.username}`}
     >
       {/* Channel/Group */}
@@ -233,10 +323,10 @@ function EntityRow({ entity }) {
             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
             style={{ backgroundColor: entity.avatarColor }}
           >
-            {entity.title.substring(0, 2).toUpperCase()}
+            {entity.title?.substring(0, 2).toUpperCase() || entity.username.substring(0, 2).toUpperCase()}
           </div>
           <span className="font-medium text-gray-900 hover:text-teal-600 transition-colors">
-            {entity.title}
+            {entity.title || entity.username}
           </span>
         </Link>
       </td>
@@ -260,18 +350,18 @@ function EntityRow({ entity }) {
       <td className={`px-4 py-4 text-sm text-right font-medium ${
         entity.growth7 >= 0 ? 'text-emerald-600' : 'text-red-500'
       }`}>
-        {entity.growth7 >= 0 ? '+' : ''}{entity.growth7}%
+        {entity.growth7 >= 0 ? '+' : ''}{entity.growth7?.toFixed(1) || '0.0'}%
       </td>
 
       {/* Activity Badge */}
       <td className="px-4 py-4 text-center">
-        <ActivityBadge level={entity.activity} />
+        <ActivityBadge level={entity.activity || entity.activityLabel} />
       </td>
 
       {/* Red Flags */}
       <td className="px-4 py-4 text-center">
         <div className="flex items-center justify-center gap-1">
-          <span className="text-sm text-gray-700">{entity.redFlags}</span>
+          <span className="text-sm text-gray-700">{entity.redFlags || 0}</span>
           <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="currentColor">
             <path d="M4 2v20h2v-8h12l-2-4 2-4H6V2H4z"/>
           </svg>
@@ -281,9 +371,9 @@ function EntityRow({ entity }) {
       {/* FOMO Score */}
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-2">
-          <span className="text-sm font-semibold text-gray-900">{entity.fomoScore}</span>
+          <span className="text-sm font-semibold text-gray-900">{entity.fomoScore || entity.utilityScore}</span>
           <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-          {entity.engagement !== null && (
+          {entity.engagement !== null && entity.engagement !== undefined && (
             <>
               <span className="text-sm text-gray-500">{formatNumber(entity.engagement)}</span>
               <ThumbsUp className="w-4 h-4 text-teal-500" />
@@ -304,25 +394,8 @@ function ActivityBadge({ level }) {
 
   return (
     <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full border ${styles[level] || styles.Medium}`}>
-      {level}
+      {level || 'Medium'}
     </span>
-  );
-}
-
-function SocialIcon({ name }) {
-  const icons = {
-    twitter: '𝕏',
-    discord: '🎮',
-    instagram: '📷',
-    linkedin: '💼',
-    tiktok: '🎵',
-    youtube: '▶️',
-  };
-
-  return (
-    <button className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-sm">
-      {icons[name] || '?'}
-    </button>
   );
 }
 
@@ -331,4 +404,19 @@ function formatNumber(num) {
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
   if (num >= 1000) return (num / 1000).toFixed(num >= 10000 ? 0 : 1) + 'k';
   return num.toString();
+}
+
+function generatePageNumbers(current, total) {
+  const pages = [];
+  const delta = 2;
+
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== '...') {
+      pages.push('...');
+    }
+  }
+
+  return pages;
 }
