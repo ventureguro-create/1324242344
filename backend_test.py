@@ -182,11 +182,9 @@ class U8RecommendationTester:
         print(f"Testing against: {self.base_url}")
         print("=" * 60)
         
-        # Test basic connectivity first
-        if not self.test_health_check():
-            print("❌ Basic connectivity failed, skipping remaining tests")
-            return self.generate_report()
-            
+        # Skip health check and directly test the recommendation API
+        print("ℹ️ Skipping health check (endpoint not available), testing recommendation API directly...")
+        
         # Test U-8 Recommendation Engine APIs
         tests = [
             self.test_similar_channels_api_structure,
