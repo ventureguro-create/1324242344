@@ -111,13 +111,6 @@ export default function TelegramChannelOverviewPage() {
     );
   }
 
-export default function TelegramChannelOverviewPage() {
-  const { username } = useParams();
-  const [channel, setChannel] = useState(MOCK_CHANNEL);
-  const [loading, setLoading] = useState(false);
-  const [timeRange, setTimeRange] = useState('24H');
-  const [showCompare, setShowCompare] = useState(false);
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-[1400px] mx-auto px-6 py-6">
