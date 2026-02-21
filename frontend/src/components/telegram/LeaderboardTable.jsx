@@ -192,10 +192,9 @@ export default function LeaderboardTable({ items = [], loading = false }) {
             {isUtility ? (
               <>
                 <ColumnHeader label="Utility" tooltip="Overall channel quality score (0-100)" />
+                <ColumnHeader label="Lifecycle" tooltip="Channel stage: Emerging, Expanding, Mature, Saturated, Declining" />
                 <ColumnHeader label="Growth" tooltip="30-day score change percentage" />
                 <ColumnHeader label="ER" tooltip="Engagement Rate = Views / Subscribers" />
-                <ColumnHeader label="Stability" tooltip="View consistency (higher = more consistent)" />
-                <ColumnHeader label="Original" tooltip="Original content % (non-forwarded)" />
                 <ColumnHeader label="Fraud" tooltip="Fraud risk level" />
               </>
             ) : isMomentum ? (
