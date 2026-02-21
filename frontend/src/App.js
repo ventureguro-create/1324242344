@@ -434,7 +434,12 @@ function App() {
               <Route path="/sentiment/twitter-ai" element={<TwitterAIPage />} />
               
               {/* Telegram Intelligence Module */}
-              <Route path="/telegram" element={<TelegramLeaderboardPage />} />
+              {/* UI-FREEZE-1: New Reference Design (main routes) */}
+              <Route path="/telegram" element={<TelegramEntitiesPage />} />
+              <Route path="/telegram/entities" element={<TelegramEntitiesPage />} />
+              <Route path="/telegram/channel/:username" element={<TelegramChannelOverviewPage />} />
+              
+              {/* Legacy routes (preserved for compatibility) */}
               <Route path="/telegram/leaderboard" element={<TelegramLeaderboardPage />} />
               <Route path="/telegram/movers" element={<TelegramMoversPage />} />
               <Route path="/telegram/alerts" element={<TelegramAlertsPage />} />
@@ -443,8 +448,8 @@ function App() {
               <Route path="/telegram/rotation" element={<TelegramRotationPage />} />
               <Route path="/telegram/transitions" element={<TelegramTransitionsPage />} />
               <Route path="/telegram/signals" element={<TelegramSignalsPage />} />
-              <Route path="/telegram/:username" element={<TelegramChannelPage />} />
-              <Route path="/telegram/channel" element={<TelegramIntelPage />} />
+              <Route path="/telegram/:username" element={<TelegramChannelOverviewPage />} />
+              <Route path="/telegram/intel" element={<TelegramIntelPage />} />
               
               {/* S3.8.2 - Sentiment Admin Dashboard (in Platform Admin) */}
               <Route path="/admin/ml/sentiment" element={<AdminSentimentPage />} />
