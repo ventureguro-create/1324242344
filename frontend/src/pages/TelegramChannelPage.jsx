@@ -9,6 +9,7 @@ import * as telegramApi from '../api/telegramIntel.api';
 import MomentumCard from '../components/telegram/MomentumCard';
 import MomentumSparkline from '../components/telegram/MomentumSparkline';
 import { WatchlistButton } from '../components/telegram/WatchlistButton';
+import SimilarChannelsPanel from '../components/telegram/SimilarChannelsPanel';
 
 export default function TelegramChannelPage() {
   const { username } = useParams();
