@@ -433,6 +433,7 @@ function App() {
               <Route path="/telegram/alerts" element={<TelegramAlertsPage />} />
               <Route path="/telegram/watchlist" element={<TelegramWatchlistPage />} />
               <Route path="/telegram/sectors" element={<TelegramSectorsPage />} />
+              <Route path="/telegram/rotation" element={<TelegramRotationPage />} />
               <Route path="/telegram/:username" element={<TelegramChannelPage />} />
               <Route path="/telegram/channel" element={<TelegramIntelPage />} />
               
